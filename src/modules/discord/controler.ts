@@ -105,7 +105,7 @@ export async function getGuildLeaderboard(req: Request, res: Response, next: Nex
     const isPrivateLeaderboard = await configManager.getGuildConfigOptionValue(guildId, "private_leaderboard");
     if (isPrivateLeaderboard) {
         // eslint-disable-next-line @typescript-eslint/no-empty-function
-        const err = await tokenCheckMiddleware(req, res, () => {}) || await isDiscordServerMember(req, res, () => {});
+        const err = await tokenCheckMiddleware(req, res, () => { }) || await isDiscordServerMember(req, res, () => { });
         if (err) {
             return err;
         }
