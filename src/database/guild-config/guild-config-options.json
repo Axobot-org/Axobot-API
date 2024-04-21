@@ -19,11 +19,6 @@
             "default": "en",
             "is_listed": true
         },
-        "nicknames_history": {
-            "type": "boolean",
-            "default": false,
-            "is_listed": false
-        },
         "prefix": {
             "type": "text",
             "min_length": 1,
