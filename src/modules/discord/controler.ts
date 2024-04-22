@@ -13,13 +13,28 @@ const db = Database.getInstance();
 const discordClient = DiscordClient.getInstance();
 const configManager = GuildConfigManager.getInstance();
 
+function parseCategoriesParameter(category: unknown) {
+    if (category === "all") {
+        return "all";
+    }
+    if (typeof category !== "string") {
+        return null;
+    }
+    const splitted = category.split(",");
+    if (!is<GuildConfigOptionCategory[]>(splitted)) {
+        return null;
+    }
+    return splitted;
+}
+
 export async function getDefaultGuildConfigOptions(req: Request, res: Response) {
     const optionsList = await discordClient.getDefaultGuildConfig();
     res.send(optionsList);
 }
 
 export async function getGuildConfig(req: Request, res: Response) {
-    if (!is<GuildConfigOptionCategory[] | GuildConfigOptionCategory | "all">(req.query.category)) {
+    const categoriesQuery = parseCategoriesParameter(req.query.categories);
+    if (categoriesQuery === null) {
         res.status(400).send("Invalid category");
         return;
     }
@@ -31,11 +46,9 @@ export async function getGuildConfig(req: Request, res: Response) {
         return;
     }
     const categories = (
-        req.query.category === "all"
+        categoriesQuery === "all"
             ? GuildConfigOptionCategoryNames
-            : Array.isArray(req.query.category)
-                ? req.query.category
-                : [req.query.category]
+            : categoriesQuery
     );
     const config = await configManager.getGuildCategoriesConfigOptions(guildId, categories);
     res.send(config);
