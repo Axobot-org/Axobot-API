@@ -64,6 +64,9 @@ export default class GuildConfigManager {
         case "voice_channel":
         case "category":
         case "levelup_channel":
+            if (option.type === "levelup_channel" && value === "any") {
+                return value;
+            }
             return BigInt(value);
         case "roles_list":
         case "text_channels_list":
