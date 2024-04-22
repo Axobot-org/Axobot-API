@@ -3,7 +3,8 @@ import { is } from "typia";
 
 import DiscordClient from "../../bot/client";
 import Database from "../../database/db";
-import GuildConfigManager, { GuildConfigOptionCategory, GuildConfigOptionCategoryNames } from "../../database/guild-config/guild-config-manager";
+import GuildConfigManager from "../../database/guild-config/guild-config-manager";
+import { GuildConfigOptionCategory, GuildConfigOptionCategoryNames } from "../../database/guild-config/guild-config-types";
 import { tokenCheckMiddleware } from "../auth/tokens";
 import { isDiscordServerMember } from "./middlewares";
 import { getGuildInfo, transformLeaderboard } from "./utils/leaderboard";
