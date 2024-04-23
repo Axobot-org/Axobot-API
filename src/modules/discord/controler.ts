@@ -28,6 +28,10 @@ function parseCategoriesParameter(category: unknown) {
     return splitted;
 }
 
+export async function checkAdminAccess(req: Request, res: Response) {
+    res.sendStatus(204);
+}
+
 export async function getDefaultGuildConfigOptions(req: Request, res: Response) {
     const optionsList = await discordClient.getDefaultGuildConfig();
     res.send(optionsList);
