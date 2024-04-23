@@ -8,7 +8,7 @@ export const getDefaultGuildConfigRateLimiter = rateLimit({
 
 export const getGuildConfigRateLimiter = rateLimit({
     windowMs: 20 * 1000,
-    max: 5,
+    max: 10,
     standardHeaders: true,
 });
 
