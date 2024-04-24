@@ -28,10 +28,6 @@ function parseCategoriesParameter(category: unknown) {
     return splitted;
 }
 
-export async function checkAdminAccess(req: Request, res: Response) {
-    res.sendStatus(204);
-}
-
 export async function getDefaultGuildConfigOptions(req: Request, res: Response) {
     const optionsList = await discordClient.getDefaultGuildConfig();
     res.send(optionsList);
@@ -179,4 +175,21 @@ export async function getUserGuilds(req: Request, res: Response) {
     }
 
     res.send(userGuilds);
+}
+
+export async function getBasicGuildInfo(req: Request, res: Response) {
+    let guildId;
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res.status(400).send("Invalid guild ID");
+        return;
+    }
+    const guild = await discordClient.resolveGuild(guildId.toString());
+    if (guild === null) {
+        res._err = "Guild not found";
+        res.status(404).send(res._err);
+        return;
+    }
+    return res.json(await discordClient.getBasicGuildInfo({ baseGuild: guild, userId: res.locals.user!.user_id.toString() }));
 }
