@@ -222,7 +222,7 @@ export default class DiscordClient {
                 banner = fetchedGuild.bannerURL();
                 splash = fetchedGuild.splashURL();
             }
-            icon = `https://cdn.discordapp.com/icons/${commonData.id}/${commonData.icon}.webp`;
+            icon = commonData.icon ? `https://cdn.discordapp.com/icons/${commonData.id}/${commonData.icon}.webp` : null;
             isOwner = arg.oauthGuild.owner;
             permissions = new PermissionsBitField(BigInt(arg.oauthGuild.permissions));
             isAdmin = arg.oauthGuild.owner || permissions.has("Administrator");
