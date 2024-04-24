@@ -15,7 +15,7 @@ router.get("/guild/:guildId(\\d+)/config", getGuildConfigRateLimiter, tokenCheck
 
 router.get("/guild/:guildId(\\d+)/leaderboard", getLeaderboardRateLimiter, getGuildLeaderboard);
 
-router.get("/guild/:guildId(\\d+)", tokenCheckMiddleware, isDiscordServerMember, getBasicGuildInfo);
+router.get("/guild/:guildId(\\d+)", getGuildsListRateLimiter, tokenCheckMiddleware, isDiscordServerMember, getBasicGuildInfo);
 
 router.get("/leaderboard/global", getLeaderboardRateLimiter, getGlobalLeaderboard);
 
