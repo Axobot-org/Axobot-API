@@ -206,6 +206,7 @@ export default class DiscordClient {
 
     public async getBasicGuildInfo(arg: {oauthGuild: OauthGuildRawData, baseGuild?: undefined, userId?: undefined, } | {baseGuild: AnonymousGuild, userId: string, oauthGuild?: undefined}) {
         const commonData = arg.baseGuild || arg.oauthGuild;
+        let icon: string | null = null;
         let banner: string | null = null;
         let splash: string | null = null;
         let isOwner = false;
@@ -221,10 +222,12 @@ export default class DiscordClient {
                 banner = fetchedGuild.bannerURL();
                 splash = fetchedGuild.splashURL();
             }
+            icon = `https://cdn.discordapp.com/icons/${commonData.id}/${commonData.icon}.webp`;
             isOwner = arg.oauthGuild.owner;
             permissions = new PermissionsBitField(BigInt(arg.oauthGuild.permissions));
             isAdmin = arg.oauthGuild.owner || permissions.has("Administrator");
         } else {
+            icon = arg.baseGuild.iconURL();
             banner = arg.baseGuild.bannerURL();
             splash = arg.baseGuild.splashURL();
             if (fetchedGuild) {
@@ -244,7 +247,7 @@ export default class DiscordClient {
         return {
             id: commonData.id,
             name: commonData.name,
-            icon: commonData.icon,
+            icon,
             banner,
             splash,
             isOwner,
