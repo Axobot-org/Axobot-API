@@ -193,3 +193,28 @@ export async function getBasicGuildInfo(req: Request, res: Response) {
     }
     return res.json(await discordClient.getBasicGuildInfo({ baseGuild: guild, userId: res.locals.user!.user_id.toString() }));
 }
+
+export async function getGuildRoles(req: Request, res: Response) {
+    let guildId;
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res.status(400).send("Invalid guild ID");
+        return;
+    }
+    const guild = await discordClient.resolveGuild(guildId.toString());
+    if (guild === null) {
+        res._err = "Guild not found";
+        res.status(404).send(res._err);
+        return;
+    }
+    const roles = guild.roles.cache.map((role) => ({
+        "id": role.id,
+        "name": role.name,
+        "color": role.color,
+        "position": role.position,
+        "permissions": role.permissions.bitfield,
+        "managed": role.managed,
+    })).sort((a, b) => a.position - b.position);
+    return res.json(roles);
+}
