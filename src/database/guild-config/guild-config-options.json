@@ -5,6 +5,11 @@
             "default": true,
             "is_listed": true
         },
+        "enable_ttt": {
+            "type": "boolean",
+            "default": true,
+            "is_listed": true
+        },
         "language": {
             "type": "enum",
             "values": [
@@ -54,16 +59,6 @@
             "default": 20,
             "is_listed": false
         },
-        "ttt_display": {
-            "type": "enum",
-            "values": [
-                "disabled",
-                "short",
-                "normal"
-            ],
-            "default": "normal",
-            "is_listed": true
-        },
         "ttt_emojis": {
             "type": "emojis_list",
             "min_count": 2,
@@ -99,7 +94,7 @@
         "help_in_dm": {
             "type": "boolean",
             "default": false,
-            "is_listed": true
+            "is_listed": false
         },
         "membercounter": {
             "type": "voice_channel",
@@ -417,7 +412,7 @@
         "rank_in_dm": {
             "type": "boolean",
             "default": false,
-            "is_listed": true
+            "is_listed": false
         },
         "xp_decay": {
             "type": "int",
