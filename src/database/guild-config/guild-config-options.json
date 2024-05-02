@@ -247,7 +247,7 @@
             "allow_announcement_channels": true,
             "allow_non_nsfw_channels": true,
             "default": null,
-            "is_listed": true
+            "is_listed": false
         },
         "vote_emojis": {
             "type": "emojis_list",
@@ -257,7 +257,7 @@
                 "👍",
                 "👎"
             ],
-            "is_listed": true
+            "is_listed": false
         }
     },
     "streamers": {
