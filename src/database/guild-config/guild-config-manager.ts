@@ -2,13 +2,7 @@ import JSONbig from "json-bigint";
 
 import Database from "../db";
 import GuildConfigOptionsMap from "./guild-config-options.json";
-import { AllRepresentation } from "./guild-config-types";
-
-export const GuildConfigOptionCategoryNames = ["core", "info", "moderation", "partners", "poll-channels", "streamers", "voice-channels", "welcome", "xp"] as const;
-export type GuildConfigOptionCategory = typeof GuildConfigOptionCategoryNames[number];
-export type GuildConfigOptionsMapType = Record<GuildConfigOptionCategory, Record<string, AllRepresentation>>;
-export type GuildConfigOptionValueType = AllRepresentation["default"] | bigint;
-export type PartialGuildConfig = Partial<Record<GuildConfigOptionCategory, Record<string, unknown>>>;
+import { AllRepresentation, GuildConfigOptionCategory, GuildConfigOptionsMapType, GuildConfigOptionValueType, PartialGuildConfig } from "./guild-config-types";
 
 export default class GuildConfigManager {
     private static instance: GuildConfigManager;
@@ -64,6 +58,9 @@ export default class GuildConfigManager {
         case "voice_channel":
         case "category":
         case "levelup_channel":
+            if (option.type === "levelup_channel" && value === "any") {
+                return value;
+            }
             return BigInt(value);
         case "roles_list":
         case "text_channels_list":

@@ -5,6 +5,11 @@
             "default": true,
             "is_listed": true
         },
+        "enable_ttt": {
+            "type": "boolean",
+            "default": true,
+            "is_listed": true
+        },
         "language": {
             "type": "enum",
             "values": [
@@ -17,18 +22,6 @@
                 "cs"
             ],
             "default": "en",
-            "is_listed": true
-        },
-        "nicknames_history": {
-            "type": "boolean",
-            "default": false,
-            "is_listed": false
-        },
-        "prefix": {
-            "type": "text",
-            "min_length": 1,
-            "max_length": 10,
-            "default": "!",
             "is_listed": true
         },
         "roles_react_max_number": {
@@ -58,16 +51,6 @@
             "max": null,
             "default": 20,
             "is_listed": false
-        },
-        "ttt_display": {
-            "type": "enum",
-            "values": [
-                "disabled",
-                "short",
-                "normal"
-            ],
-            "default": "normal",
-            "is_listed": true
         },
         "ttt_emojis": {
             "type": "emojis_list",
@@ -104,7 +87,7 @@
         "help_in_dm": {
             "type": "boolean",
             "default": false,
-            "is_listed": true
+            "is_listed": false
         },
         "membercounter": {
             "type": "voice_channel",
@@ -155,73 +138,10 @@
             "default": false,
             "is_listed": true
         },
-        "ban_allowed_roles": {
-            "type": "roles_list",
-            "min_count": 1,
-            "max_count": 100,
-            "allow_integrated_roles": true,
-            "allow_everyone": true,
-            "default": null,
-            "is_listed": true
-        },
-        "clear_allowed_roles": {
-            "type": "roles_list",
-            "min_count": 1,
-            "max_count": 100,
-            "allow_integrated_roles": true,
-            "allow_everyone": true,
-            "default": null,
-            "is_listed": true
-        },
-        "kick_allowed_roles": {
-            "type": "roles_list",
-            "min_count": 1,
-            "max_count": 100,
-            "allow_integrated_roles": true,
-            "allow_everyone": true,
-            "default": null,
-            "is_listed": true
-        },
-        "mute_allowed_roles": {
-            "type": "roles_list",
-            "min_count": 1,
-            "max_count": 100,
-            "allow_integrated_roles": true,
-            "allow_everyone": true,
-            "default": null,
-            "is_listed": true
-        },
         "muted_role": {
             "type": "role",
             "allow_integrated_roles": false,
             "allow_everyone": false,
-            "default": null,
-            "is_listed": true
-        },
-        "say_allowed_roles": {
-            "type": "roles_list",
-            "min_count": 1,
-            "max_count": 100,
-            "allow_integrated_roles": true,
-            "allow_everyone": true,
-            "default": null,
-            "is_listed": true
-        },
-        "slowmode_allowed_roles": {
-            "type": "roles_list",
-            "min_count": 1,
-            "max_count": 100,
-            "allow_integrated_roles": true,
-            "allow_everyone": true,
-            "default": null,
-            "is_listed": true
-        },
-        "warn_allowed_roles": {
-            "type": "roles_list",
-            "min_count": 1,
-            "max_count": 100,
-            "allow_integrated_roles": true,
-            "allow_everyone": true,
             "default": null,
             "is_listed": true
         }
@@ -257,7 +177,7 @@
             "allow_announcement_channels": true,
             "allow_non_nsfw_channels": true,
             "default": null,
-            "is_listed": true
+            "is_listed": false
         },
         "vote_emojis": {
             "type": "emojis_list",
@@ -267,7 +187,7 @@
                 "👍",
                 "👎"
             ],
-            "is_listed": true
+            "is_listed": false
         }
     },
     "streamers": {
@@ -422,6 +342,13 @@
         "rank_in_dm": {
             "type": "boolean",
             "default": false,
+            "is_listed": false
+        },
+        "xp_decay": {
+            "type": "int",
+            "min": 0,
+            "max": 200,
+            "default": 0,
             "is_listed": true
         },
         "xp_decay": {

@@ -3,7 +3,8 @@ import { is } from "typia";
 
 import DiscordClient from "../../bot/client";
 import Database from "../../database/db";
-import GuildConfigManager, { GuildConfigOptionCategory, GuildConfigOptionCategoryNames } from "../../database/guild-config/guild-config-manager";
+import GuildConfigManager from "../../database/guild-config/guild-config-manager";
+import { GuildConfigOptionCategory, GuildConfigOptionCategoryNames } from "../../database/guild-config/guild-config-types";
 import { tokenCheckMiddleware } from "../auth/tokens";
 import { isDiscordServerMember } from "./middlewares";
 import { getGuildInfo, transformLeaderboard } from "./utils/leaderboard";
@@ -13,13 +14,28 @@ const db = Database.getInstance();
 const discordClient = DiscordClient.getInstance();
 const configManager = GuildConfigManager.getInstance();
 
+function parseCategoriesParameter(category: unknown) {
+    if (category === "all") {
+        return "all";
+    }
+    if (typeof category !== "string") {
+        return null;
+    }
+    const splitted = category.split(",");
+    if (!is<GuildConfigOptionCategory[]>(splitted)) {
+        return null;
+    }
+    return splitted;
+}
+
 export async function getDefaultGuildConfigOptions(req: Request, res: Response) {
     const optionsList = await discordClient.getDefaultGuildConfig();
     res.send(optionsList);
 }
 
 export async function getGuildConfig(req: Request, res: Response) {
-    if (!is<GuildConfigOptionCategory[] | GuildConfigOptionCategory | "all">(req.query.category)) {
+    const categoriesQuery = parseCategoriesParameter(req.query.categories);
+    if (categoriesQuery === null) {
         res.status(400).send("Invalid category");
         return;
     }
@@ -31,11 +47,9 @@ export async function getGuildConfig(req: Request, res: Response) {
         return;
     }
     const categories = (
-        req.query.category === "all"
+        categoriesQuery === "all"
             ? GuildConfigOptionCategoryNames
-            : Array.isArray(req.query.category)
-                ? req.query.category
-                : [req.query.category]
+            : categoriesQuery
     );
     const config = await configManager.getGuildCategoriesConfigOptions(guildId, categories);
     res.send(config);
@@ -161,4 +175,46 @@ export async function getUserGuilds(req: Request, res: Response) {
     }
 
     res.send(userGuilds);
+}
+
+export async function getBasicGuildInfo(req: Request, res: Response) {
+    let guildId;
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res.status(400).send("Invalid guild ID");
+        return;
+    }
+    const guild = await discordClient.resolveGuild(guildId.toString());
+    if (guild === null) {
+        res._err = "Guild not found";
+        res.status(404).send(res._err);
+        return;
+    }
+    return res.json(await discordClient.getBasicGuildInfo({ baseGuild: guild, userId: res.locals.user!.user_id.toString() }));
+}
+
+export async function getGuildRoles(req: Request, res: Response) {
+    let guildId;
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res.status(400).send("Invalid guild ID");
+        return;
+    }
+    const guild = await discordClient.resolveGuild(guildId.toString());
+    if (guild === null) {
+        res._err = "Guild not found";
+        res.status(404).send(res._err);
+        return;
+    }
+    const roles = guild.roles.cache.map((role) => ({
+        "id": role.id,
+        "name": role.name,
+        "color": role.color,
+        "position": role.position,
+        "permissions": role.permissions.bitfield,
+        "managed": role.managed,
+    })).sort((a, b) => a.position - b.position);
+    return res.json(roles);
 }

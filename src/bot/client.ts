@@ -1,5 +1,5 @@
 import { createCache, MemoryCache, memoryStore } from "cache-manager";
-import { Client, DiscordAPIError, Events, GatewayIntentBits, PermissionResolvable, PermissionsBitField } from "discord.js";
+import { AnonymousGuild, Client, DiscordAPIError, Events, GatewayIntentBits, GuildFeature, PermissionResolvable, PermissionsBitField } from "discord.js";
 
 import Database from "../database/db";
 import GuildConfigManager from "../database/guild-config/guild-config-manager";
@@ -204,6 +204,60 @@ export default class DiscordClient {
         return user;
     }
 
+    public async getBasicGuildInfo(arg: {oauthGuild: OauthGuildRawData, baseGuild?: undefined, userId?: undefined, } | {baseGuild: AnonymousGuild, userId: string, oauthGuild?: undefined}) {
+        const commonData = arg.baseGuild || arg.oauthGuild;
+        let icon: string | null = null;
+        let banner: string | null = null;
+        let splash: string | null = null;
+        let isOwner = false;
+        let permissions: PermissionsBitField | null = null;
+        let isAdmin = false;
+
+        const client = await this.getClient();
+        await this.waitUntilReady();
+        const fetchedGuild = await client.guilds.fetch(commonData.id).catch(() => null);
+
+        if (arg.oauthGuild) {
+            if (fetchedGuild) {
+                banner = fetchedGuild.bannerURL();
+                splash = fetchedGuild.splashURL();
+            }
+            icon = commonData.icon ? `https://cdn.discordapp.com/icons/${commonData.id}/${commonData.icon}.webp` : null;
+            isOwner = arg.oauthGuild.owner;
+            permissions = new PermissionsBitField(BigInt(arg.oauthGuild.permissions));
+            isAdmin = arg.oauthGuild.owner || permissions.has("Administrator");
+        } else {
+            icon = arg.baseGuild.iconURL();
+            banner = arg.baseGuild.bannerURL();
+            splash = arg.baseGuild.splashURL();
+            if (fetchedGuild) {
+                isOwner = isAdmin = fetchedGuild.ownerId === arg.userId;
+                if (isOwner) {
+                    permissions = new PermissionsBitField(BigInt("8"));
+                } else {
+                    const member = await this.getMemberFromGuild(commonData.id, arg.userId);
+                    if (member) {
+                        permissions = member.permissions;
+                        isAdmin = member.permissions.has("Administrator");
+                    }
+                }
+            }
+        }
+
+        return {
+            id: commonData.id,
+            name: commonData.name,
+            icon,
+            banner,
+            splash,
+            isOwner,
+            isAdmin,
+            permissions,
+            isBotPresent: fetchedGuild !== null,
+            features: commonData.features as GuildFeature[],
+        };
+    }
+
     public async getGuildsFromOauth(discordToken: string): Promise<OauthGuildData[] | null> {
         const cached = await this.cache.get<OauthGuildData[]>(`getGuildsFromOauth-${discordToken}`);
         if (cached !== undefined) {
@@ -221,25 +275,7 @@ export default class DiscordClient {
             return null;
         }
 
-        const client = await this.getClient();
-        await this.waitUntilReady();
-
-        const guilds = await Promise.all(data.map(async (rawGuild) => {
-            const permissions = new PermissionsBitField(BigInt(rawGuild.permissions));
-            const fetchedGuild = await client.guilds.fetch(rawGuild.id).catch(() => null);
-            return {
-                id: rawGuild.id,
-                name: rawGuild.name,
-                icon: rawGuild.icon,
-                banner: fetchedGuild?.banner || null,
-                splash: fetchedGuild?.splash || null,
-                owner: rawGuild.owner,
-                isAdmin: rawGuild.owner || permissions.has("Administrator"),
-                isBotPresent: fetchedGuild !== null,
-                permissions: permissions,
-                features: rawGuild.features,
-            };
-        }));
+        const guilds = await Promise.all(data.map(async (rawGuild) => await this.getBasicGuildInfo({ oauthGuild: rawGuild })));
 
         await this.cache.set(`getGuildsFromOauth-${discordToken}`, guilds);
 
