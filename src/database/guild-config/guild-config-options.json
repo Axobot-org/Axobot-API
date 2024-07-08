@@ -24,13 +24,6 @@
             "default": "en",
             "is_listed": true
         },
-        "prefix": {
-            "type": "text",
-            "min_length": 1,
-            "max_length": 10,
-            "default": "!",
-            "is_listed": true
-        },
         "roles_react_max_number": {
             "type": "int",
             "min": 0,
@@ -145,73 +138,10 @@
             "default": false,
             "is_listed": true
         },
-        "ban_allowed_roles": {
-            "type": "roles_list",
-            "min_count": 1,
-            "max_count": 100,
-            "allow_integrated_roles": true,
-            "allow_everyone": true,
-            "default": null,
-            "is_listed": true
-        },
-        "clear_allowed_roles": {
-            "type": "roles_list",
-            "min_count": 1,
-            "max_count": 100,
-            "allow_integrated_roles": true,
-            "allow_everyone": true,
-            "default": null,
-            "is_listed": true
-        },
-        "kick_allowed_roles": {
-            "type": "roles_list",
-            "min_count": 1,
-            "max_count": 100,
-            "allow_integrated_roles": true,
-            "allow_everyone": true,
-            "default": null,
-            "is_listed": true
-        },
-        "mute_allowed_roles": {
-            "type": "roles_list",
-            "min_count": 1,
-            "max_count": 100,
-            "allow_integrated_roles": true,
-            "allow_everyone": true,
-            "default": null,
-            "is_listed": true
-        },
         "muted_role": {
             "type": "role",
             "allow_integrated_roles": false,
             "allow_everyone": false,
-            "default": null,
-            "is_listed": true
-        },
-        "say_allowed_roles": {
-            "type": "roles_list",
-            "min_count": 1,
-            "max_count": 100,
-            "allow_integrated_roles": true,
-            "allow_everyone": true,
-            "default": null,
-            "is_listed": true
-        },
-        "slowmode_allowed_roles": {
-            "type": "roles_list",
-            "min_count": 1,
-            "max_count": 100,
-            "allow_integrated_roles": true,
-            "allow_everyone": true,
-            "default": null,
-            "is_listed": true
-        },
-        "warn_allowed_roles": {
-            "type": "roles_list",
-            "min_count": 1,
-            "max_count": 100,
-            "allow_integrated_roles": true,
-            "allow_everyone": true,
             "default": null,
             "is_listed": true
         }
