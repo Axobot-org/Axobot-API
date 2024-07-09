@@ -163,6 +163,9 @@ export default class DiscordClient {
         if (member === null) {
             return false;
         }
+        if (member.roles.cache.size === 0) {
+            await member.guild.roles.fetch();
+        }
         return member.permissions.has(permission);
     }
 
