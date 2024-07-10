@@ -15,7 +15,7 @@ const DB_CONFIG: PoolConfig = {
     trace: BETA,
     timezone: "auto",
 
-    "typeCast": function castField(field, useDefaultTypeCasting) {
+    typeCast: function castField(field, useDefaultTypeCasting) {
         // We only want to cast bit fields that have a single-bit in them. If the field
         // has more than one bit, then we cannot assume it is supposed to be a Boolean.
         if ( ( field.type === Types.BIT ) && ( field.columnLength === 1 ) ) {
@@ -59,6 +59,18 @@ export default class Database {
     public async getGuildConfigOptionValue(guildId: bigint, optionName: string): Promise<string | null> {
         const result = await this.axobotPool.query<{ value: string }[]>("SELECT  `value` FROM `serverconfig` WHERE `guild_id` = ? AND `option_name` = ? AND `beta` = ?", [guildId, optionName, BETA]);
         return result[0]?.value ?? null;
+    }
+
+    public async setGuildConfigOptionValue(guildId: bigint, optionName: string, value: string) {
+        await this.axobotPool.query("INSERT INTO `serverconfig` (`guild_id`, `option_name`, `value`, `beta`) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE `value` = ?", [guildId, optionName, value, BETA, value]);
+    }
+
+    public async resetGuildConfigOptionValue(guildId: bigint, optionName: string) {
+        await this.axobotPool.query("DELETE FROM `serverconfig` WHERE `guild_id` = ? AND `option_name` = ? AND `beta` = ?", [guildId, optionName, BETA]);
+    }
+
+    public async resetGuildConfigOptions(guildId: bigint) {
+        await this.axobotPool.query("DELETE FROM `serverconfig` WHERE `guild_id` = ? AND `beta` = ?", [guildId, BETA]);
     }
 
     public async getGlobalLeaderboard(page = 0, limit = 50): Promise<LeaderboardPlayer[]> {
@@ -120,7 +132,7 @@ export default class Database {
         return result[0] ?? null;
     }
 
-    public async registerToken(userId: bigint, apiToken: string, discordToken: string | null, expiresAt: Date): Promise<void> {
+    public async registerToken(userId: bigint, apiToken: string, discordToken: string | null, expiresAt: Date) {
         await this.apiPool.query("INSERT INTO `tokens` (`user_id`, `api_token`, `discord_token`, `expires_at`) VALUES (?, ?, ?, ?)", [userId, apiToken, discordToken, expiresAt]);
     }
 

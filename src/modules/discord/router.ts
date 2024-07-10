@@ -1,8 +1,8 @@
 import express from "express";
 
 import { tokenCheckMiddleware } from "../auth/tokens";
-import { getBasicGuildInfo, getBotChangelog, getDefaultGuildConfigOptions, getGlobalLeaderboard, getGuildConfig, getGuildLeaderboard, getGuildRoles, getUserGuilds } from "./controler";
-import { isDiscordServerMember } from "./middlewares";
+import { editGuildConfig, getBasicGuildInfo, getBotChangelog, getDefaultGuildConfigOptions, getGlobalLeaderboard, getGuildConfig, getGuildLeaderboard, getGuildRoles, getUserGuilds } from "./controler";
+import { isDiscordServerAdmin, isDiscordServerMember } from "./middlewares";
 import { getDefaultGuildConfigRateLimiter, getGuildConfigRateLimiter, getGuildsListRateLimiter, getLeaderboardRateLimiter } from "./ratelimits";
 
 const router = express.Router();
@@ -22,5 +22,8 @@ router.get("/guild/:guildId(\\d+)", getGuildsListRateLimiter, tokenCheckMiddlewa
 router.get("/leaderboard/global", getLeaderboardRateLimiter, getGlobalLeaderboard);
 
 router.get("/@me/guilds", getGuildsListRateLimiter, tokenCheckMiddleware, getUserGuilds);
+
+
+router.patch("/guild/:guildId(\\d+)/config", getGuildConfigRateLimiter, tokenCheckMiddleware, isDiscordServerAdmin, editGuildConfig);
 
 export default router;

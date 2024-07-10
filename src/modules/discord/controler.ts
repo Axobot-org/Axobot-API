@@ -218,3 +218,49 @@ export async function getGuildRoles(req: Request, res: Response) {
     })).sort((a, b) => a.position - b.position);
     return res.json(roles);
 }
+
+export async function editGuildConfig(req: Request, res: Response) {
+    // check guild ID validity
+    let guildId;
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res.status(400).send("Invalid guild ID");
+        return;
+    }
+    const guild = await discordClient.resolveGuild(guildId.toString());
+    if (guild === null) {
+        res._err = "Guild not found";
+        res.status(404).send(res._err);
+        return;
+    }
+    // check config validity
+    const config = req.body;
+    if (!is<Record<string, unknown>>(config) || Object.keys(config).length === 0) {
+        return res.status(400).send("Invalid config");
+    }
+    const errors: string[] = [];
+    for (const [optionName, value] of Object.entries(config)) {
+        if (value === null) continue;
+        try {
+            await configManager.assertValueValidity(optionName, guild, value);
+        } catch (err) {
+            errors.push(`${err}`);
+        }
+    }
+    if (errors.length > 0) {
+        return res.status(400).send(errors);
+    }
+    // store new config into database
+    for (const [optionName, value] of Object.entries(config)) {
+        const rawValue = await configManager.convertFromType(optionName, value);
+        if (rawValue === null) {
+            await db.resetGuildConfigOptionValue(guildId, optionName);
+        } else {
+            await db.setGuildConfigOptionValue(guildId, optionName, rawValue);
+        }
+    }
+    // send updated config
+    const updatedConfig = await configManager.getGuildConfigOption(guildId, Object.keys(config));
+    res.send(updatedConfig);
+}
