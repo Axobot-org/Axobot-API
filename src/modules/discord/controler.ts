@@ -1,3 +1,4 @@
+import { ChannelType, GuildBasedChannel } from "discord.js";
 import { NextFunction, Request, Response } from "express";
 import { is } from "typia";
 
@@ -208,6 +209,9 @@ export async function getGuildRoles(req: Request, res: Response) {
         res.status(404).send(res._err);
         return;
     }
+    if (guild.roles.cache.size === 0) {
+        await guild.roles.fetch();
+    }
     const roles = guild.roles.cache.map((role) => ({
         "id": role.id,
         "name": role.name,
@@ -218,6 +222,65 @@ export async function getGuildRoles(req: Request, res: Response) {
     })).sort((a, b) => a.position - b.position);
     return res.json(roles);
 }
+
+export async function getGuildChannels(req: Request, res: Response) {
+    let guildId;
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res.status(400).send("Invalid guild ID");
+        return;
+    }
+    const guild = await discordClient.resolveGuild(guildId.toString());
+    if (guild === null) {
+        res._err = "Guild not found";
+        res.status(404).send(res._err);
+        return;
+    }
+    if (guild.channels.cache.size === 0) {
+        await guild.channels.fetch();
+    }
+    const channelsList = Array.from(guild.channels.cache.values());
+    const channelIds = new Set(channelsList.map((channel) => channel.id));
+    const threadsList = Array.from((await guild.channels.fetchActiveThreads()).threads.values()).filter((thread) => !channelIds.has(thread.id));
+
+    function createPositionId(channel: GuildBasedChannel): number {
+        if (channel.type === ChannelType.GuildCategory) {
+            return (channel.position + 1) * 100000;
+        }
+        const parentPosition = channel.parent ? createPositionId(channel.parent) : 0;
+        let channelPosition: number;
+        if (channel.isThread()) {
+            channelPosition = 1;
+        } else if (channel.isVoiceBased()) {
+            channelPosition = (1000 + (channel.position + 1)) * 10;
+        } else {
+            channelPosition = (channel.position + 1) * 10;
+        }
+        return parentPosition + channelPosition;
+    }
+
+    const channels = [...channelsList, ...threadsList].map((channel) => ({
+        "id": channel.id,
+        "name": channel.name,
+        "type": channel.type,
+        "isText": channel.isTextBased(),
+        "isVoice": channel.isVoiceBased(),
+        "isThread": channel.isThread(),
+        "isNSFW": "nsfw" in channel ? channel.nsfw : channel.parent?.nsfw ?? false,
+        "position": "position" in channel ? channel.position : null,
+        "parentId": "parentId" in channel ? channel.parentId : null,
+        "positionId": createPositionId(channel),
+    }))
+        .sort((a, b) => a.positionId - b.positionId)
+        .map((channel) => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { positionId, ...cleanObject } = channel;
+            return cleanObject;
+        });
+    return res.json(channels);
+}
+
 
 export async function editGuildConfig(req: Request, res: Response) {
     // check guild ID validity
