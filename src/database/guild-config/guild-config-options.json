@@ -84,10 +84,10 @@
             "default": null,
             "is_listed": true
         },
-        "help_in_dm": {
+        "help_in_private": {
             "type": "boolean",
             "default": false,
-            "is_listed": false
+            "is_listed": true
         },
         "membercounter": {
             "type": "voice_channel",
@@ -339,10 +339,10 @@
             "default": true,
             "is_listed": true
         },
-        "rank_in_dm": {
+        "rank_in_private": {
             "type": "boolean",
             "default": false,
-            "is_listed": false
+            "is_listed": true
         },
         "xp_decay": {
             "type": "int",
