@@ -261,7 +261,7 @@ export default class DiscordClient {
         };
     }
 
-    public async getGuildsFromOauth(discordToken: string): Promise<OauthGuildData[] | null> {
+    public async getGuildsFromOauth(discordToken: string): Promise<OauthGuildData[] | 401 | null> {
         const cached = await this.cache.get<OauthGuildData[]>(`getGuildsFromOauth-${discordToken}`);
         if (cached !== undefined) {
             return cached;
@@ -275,6 +275,9 @@ export default class DiscordClient {
 
         if (isDiscordAPIError(data)) {
             console.debug(data);
+            if (data.message === "401: Unauthorized") {
+                return 401;
+            }
             return null;
         }
 

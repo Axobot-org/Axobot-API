@@ -169,6 +169,12 @@ export async function getUserGuilds(req: Request, res: Response) {
     }
     const userGuilds = await discordClient.getGuildsFromOauth(res.locals.user.discord_token);
 
+    if (userGuilds === 401) {
+        res._err = "Invalid token";
+        res.status(401).send(res._err);
+        return;
+    }
+
     if (userGuilds === null) {
         res._err = "Unable to get user guilds";
         res.status(500).send(res._err);
