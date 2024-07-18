@@ -1,11 +1,6 @@
 {
     "core": {
-        "enable_fun": {
-            "type": "boolean",
-            "default": true,
-            "is_listed": true
-        },
-        "enable_ttt": {
+        "enable_events": {
             "type": "boolean",
             "default": true,
             "is_listed": true
