@@ -289,7 +289,11 @@ export async function getGuildChannels(req: Request, res: Response) {
 
 
 export async function editGuildConfig(req: Request, res: Response) {
-    // check guild ID validity
+    // check user and guild ID validity
+    if (res.locals.user === undefined) {
+        res.status(401).send("Invalid token");
+        return;
+    }
     let guildId;
     try {
         guildId = BigInt(req.params.guildId);
@@ -320,13 +324,15 @@ export async function editGuildConfig(req: Request, res: Response) {
     if (errors.length > 0) {
         return res.status(400).send(errors);
     }
-    // store new config into database
+    // store new config into database and log the config change
     for (const [optionName, value] of Object.entries(config)) {
         const rawValue = await configManager.convertFromType(optionName, value);
         if (rawValue === null) {
             await db.resetGuildConfigOptionValue(guildId, optionName);
+            await db.addConfigEditionLog(guildId, res.locals.user.user_id, "sconfig_option_reset", { option: optionName });
         } else {
             await db.setGuildConfigOptionValue(guildId, optionName, rawValue);
+            await db.addConfigEditionLog(guildId, res.locals.user.user_id, "sconfig_option_set", { option: optionName, value: rawValue });
         }
     }
     // send updated config

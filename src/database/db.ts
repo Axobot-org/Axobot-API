@@ -73,6 +73,10 @@ export default class Database {
         await this.axobotPool.query("DELETE FROM `serverconfig` WHERE `guild_id` = ? AND `beta` = ?", [guildId, BETA]);
     }
 
+    public async addConfigEditionLog(guildId: bigint, userId: bigint, eventType: "sconfig_option_set" | "sconfig_option_reset" | "sconfig_reset_all", data: Record<string, unknown>) {
+        await this.axobotPool.query("INSERT INTO `edition_logs` (`guild_id`, `user_id`, `type`, `data`) VALUES (?, ?, ?, ?)", [guildId, userId, eventType, JSON.stringify(data)]);
+    }
+
     public async getGlobalLeaderboard(page = 0, limit = 50): Promise<LeaderboardPlayer[]> {
         return await this.axobotPool.query("SELECT `userID`, `xp` FROM `xp` WHERE banned = 0 ORDER BY `xp` DESC LIMIT ?, ?", [page * limit, limit]);
     }
