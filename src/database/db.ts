@@ -73,7 +73,7 @@ export default class Database {
         await this.axobotPool.query("DELETE FROM `serverconfig` WHERE `guild_id` = ? AND `beta` = ?", [guildId, BETA]);
     }
 
-    public async addConfigEditionLog(guildId: bigint, userId: bigint, eventType: "sconfig_option_set" | "sconfig_option_reset" | "sconfig_reset_all", data: Record<string, unknown>) {
+    public async addConfigEditionLog(guildId: bigint, userId: bigint, eventType: "sconfig_option_set" | "sconfig_option_reset" | "sconfig_reset_all" | "leaderboard_put", data: Record<string, unknown> | null) {
         await this.axobotPool.query("INSERT INTO `edition_logs` (`guild_id`, `user_id`, `type`, `data`) VALUES (?, ?, ?, ?)", [guildId, userId, eventType, JSON.stringify(data)]);
     }
 
@@ -97,6 +97,17 @@ export default class Database {
 
     public async getGuildLeaderboard(guildId: bigint, page = 0, limit = 50): Promise<LeaderboardPlayer[]> {
         return await this.xpPool.query("SELECT `userID`, `xp` FROM `" + guildId + "` WHERE banned = 0 ORDER BY `xp` DESC LIMIT ?, ?", [page * limit, limit]);
+    }
+
+    public async deleteGuildLeaderboard(guildId: bigint) {
+        await this.xpPool.query("DELETE FROM `" + guildId + "`");
+    }
+
+    public async setGuildLeaderboard(guildId: bigint, data: { userID: bigint, xp: number }[]) {
+        await this.xpPool.batch(
+            "INSERT INTO `" + guildId + "` (`userID`, `xp`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `xp` = VALUES(`xp`)",
+            data.map((row) => [row.userID, row.xp]),
+        );
     }
 
     public async getGuildLeaderboardCount(guildId: bigint): Promise<number> {

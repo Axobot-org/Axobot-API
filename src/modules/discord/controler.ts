@@ -8,6 +8,7 @@ import GuildConfigManager from "../../database/guild-config/guild-config-manager
 import { GuildConfigOptionCategory, GuildConfigOptionCategoryNames } from "../../database/guild-config/guild-config-types";
 import { tokenCheckMiddleware } from "../auth/tokens";
 import { isDiscordServerMember } from "./middlewares";
+import { LeaderboardImportUserData } from "./types/guilds";
 import { getGuildInfo, transformLeaderboard } from "./utils/leaderboard";
 
 
@@ -288,6 +289,59 @@ export async function getGuildChannels(req: Request, res: Response) {
 }
 
 
+export async function putGuildLeaderboard(req: Request, res: Response) {
+    // check guild ID validity
+    let guildId;
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
+        return;
+    }
+    const guild = await discordClient.resolveGuild(guildId.toString());
+    if (guild === null) {
+        res._err = "Guild not found";
+        res.status(404).send(res._err);
+        return;
+    }
+    // check user ID validity
+    if (res.locals.user === undefined) {
+        res._err = "Invalid token";
+        res.status(401).send(res._err);
+        return;
+    }
+    // check xp configuration in guild
+    const isXpEnabled = await configManager.getGuildConfigOptionValue(guildId, "enable_xp");
+    if (!isXpEnabled) {
+        res._err = "XP is not enabled for this guild";
+        res.status(400).send(res._err);
+        return;
+    }
+    const xpType = await configManager.getGuildConfigOptionValue(guildId, "xp_type") as string;
+    if (xpType === "global") {
+        res._err = "Cannot edit global leaderboard";
+        res.status(400).send(res._err);
+        return;
+    }
+    // check data validity
+    const data = req.body;
+    if (!is<LeaderboardImportUserData[]>(data) || data.length === 0) {
+        res._err = "Invalid data";
+        res.status(400).send(res._err);
+        return;
+    }
+    // remove previous leaderboard
+    await db.deleteGuildLeaderboard(guildId);
+    // store new leaderboard
+    const leaderboardData = data.map((entry) => ({ userID: BigInt(entry.user_id), xp: entry.xp }));
+    await db.setGuildLeaderboard(guildId, leaderboardData);
+    // send success code
+    await db.addConfigEditionLog(guildId, res.locals.user.user_id, "leaderboard_put", null);
+    console.log(`Leaderboard for guild ${guildId} has been edited by ${res.locals.user?.user_id}`);
+    res.sendStatus(204);
+}
+
 export async function editGuildConfig(req: Request, res: Response) {
     // check user and guild ID validity
     if (res.locals.user === undefined) {
@@ -298,7 +352,8 @@ export async function editGuildConfig(req: Request, res: Response) {
     try {
         guildId = BigInt(req.params.guildId);
     } catch (e) {
-        res.status(400).send("Invalid guild ID");
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
         return;
     }
     const guild = await discordClient.resolveGuild(guildId.toString());
@@ -310,7 +365,8 @@ export async function editGuildConfig(req: Request, res: Response) {
     // check config validity
     const config = req.body;
     if (!is<Record<string, unknown>>(config) || Object.keys(config).length === 0) {
-        return res.status(400).send("Invalid config");
+        res._err = "Invalid config";
+        return res.status(400).send(res._err);
     }
     const errors: string[] = [];
     for (const [optionName, value] of Object.entries(config)) {

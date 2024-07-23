@@ -27,3 +27,8 @@ interface OauthGuildData {
     permissions: PermissionsBitField | null;
     features: GuildFeature[];
 }
+
+interface LeaderboardImportUserData {
+    user_id: string;
+    xp: number;
+}
