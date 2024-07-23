@@ -6,26 +6,30 @@ const discordClient = DiscordClient.getInstance();
 
 export async function isDiscordServerMember(req: Request, res: Response, next: NextFunction) {
     if (res.locals.user === undefined) {
-        return res.status(401).send("Invalid token");
+        res._err = "Invalid token";
+        return res.status(401).send(res._err);
     }
     const userId = res.locals.user.user_id.toString();
     const guildId = req.params.guildId;
     const result = await discordClient.checkUserPresenceInGuild(guildId, userId);
     if (!result) {
-        return res.status(401).send("User is not a member of this guild");
+        res._err = "User is not a member of this guild";
+        return res.status(401).send(res._err);
     }
     next();
 }
 
 export async function isDiscordServerAdmin(req: Request, res: Response, next: NextFunction) {
     if (res.locals.user === undefined) {
-        return res.status(401).send("Invalid token");
+        res._err = "Invalid token";
+        return res.status(401).send(res._err);
     }
     const userId = res.locals.user.user_id.toString();
     const guildId = req.params.guildId;
     const result = await discordClient.checkUserPermissionInGuild(guildId, userId, "Administrator");
     if (!result) {
-        return res.status(401).send("User is not an admin of this guild");
+        res._err = "User is not an admin of this guild";
+        return res.status(401).send(res._err);
     }
     next();
 }
