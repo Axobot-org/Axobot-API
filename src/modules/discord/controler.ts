@@ -6,6 +6,7 @@ import DiscordClient from "../../bot/client";
 import Database from "../../database/db";
 import GuildConfigManager from "../../database/guild-config/guild-config-manager";
 import { GuildConfigOptionCategory, GuildConfigOptionCategoryNames } from "../../database/guild-config/guild-config-types";
+import { LeaderboardPlayer } from "../../database/models/xp";
 import { tokenCheckMiddleware } from "../auth/tokens";
 import { isDiscordServerMember } from "./middlewares";
 import { LeaderboardImportUserData } from "./types/guilds";
@@ -147,6 +148,58 @@ export async function getGuildLeaderboard(req: Request, res: Response, next: Nex
         "xp_decay": xpDecay,
         "role_rewards": roleRewards,
     });
+}
+
+export async function getGuildLeaderboardAsJson(req: Request, res: Response, next: NextFunction) {
+    let guildId;
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res.status(400).send("Invalid guild ID");
+        return;
+    }
+    const guild = await discordClient.resolveGuild(guildId.toString());
+    if (guild === null) {
+        res._err = "Guild not found";
+        res.status(404).send(res._err);
+        return;
+    }
+    const isXpEnabled = await configManager.getGuildConfigOptionValue(guildId, "enable_xp");
+    if (!isXpEnabled) {
+        res.status(400).send("XP is not enabled for this guild");
+        return;
+    }
+    const isPrivateLeaderboard = await configManager.getGuildConfigOptionValue(guildId, "private_leaderboard");
+    if (isPrivateLeaderboard) {
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        const err = await tokenCheckMiddleware(req, res, () => { }) || await isDiscordServerMember(req, res, () => { });
+        if (err) {
+            return err;
+        }
+    }
+    const xpType = await configManager.getGuildConfigOptionValue(guildId, "xp_type") as string;
+    let leaderboard: LeaderboardPlayer[];
+    try {
+        if (xpType === "global") {
+            const stringMemberIds = await discordClient.getGuildMemberIds(guildId.toString());
+            if (stringMemberIds === null) {
+                res.status(500).send("Failed to get guild members");
+                return;
+            }
+            const memberIds = stringMemberIds.map((id) => BigInt(id));
+            leaderboard = await db.getFilteredGlobalLeaderboard(memberIds);
+        } else {
+            leaderboard = await db.getGuildLeaderboard(guildId);
+        }
+    } catch (e) {
+        next(e);
+        return;
+    }
+    const parsedLeaderboard = leaderboard.map(player => ({
+        "user_id": player.userID.toString(),
+        xp: player.xp,
+    }));
+    res.send(parsedLeaderboard);
 }
 
 export async function getBotChangelog(req: Request, res: Response) {

@@ -86,7 +86,10 @@ export default class Database {
         return result[0].count;
     }
 
-    public async getFilteredGlobalLeaderboard(userIds: bigint[], page = 0, limit = 50): Promise<LeaderboardPlayer[]> {
+    public async getFilteredGlobalLeaderboard(userIds: bigint[], page: number | undefined = undefined, limit: number | undefined = undefined): Promise<LeaderboardPlayer[]> {
+        if (page === undefined || limit === undefined) {
+            return await this.axobotPool.query("SELECT `userID`, `xp` FROM `xp` WHERE banned = 0 AND `userID` IN (?) ORDER BY `xp` DESC", [userIds]);
+        }
         return await this.axobotPool.query("SELECT `userID`, `xp` FROM `xp` WHERE banned = 0 AND `userID` IN (?) ORDER BY `xp` DESC LIMIT ?, ?", [userIds, page * limit, limit]);
     }
 
@@ -95,7 +98,10 @@ export default class Database {
         return result[0].count;
     }
 
-    public async getGuildLeaderboard(guildId: bigint, page = 0, limit = 50): Promise<LeaderboardPlayer[]> {
+    public async getGuildLeaderboard(guildId: bigint, page: number | undefined = undefined, limit: number | undefined = undefined): Promise<LeaderboardPlayer[]> {
+        if (page === undefined || limit === undefined) {
+            return await this.xpPool.query("SELECT `userID`, `xp` FROM `" + guildId + "` WHERE banned = 0 ORDER BY `xp` DESC");
+        }
         return await this.xpPool.query("SELECT `userID`, `xp` FROM `" + guildId + "` WHERE banned = 0 ORDER BY `xp` DESC LIMIT ?, ?", [page * limit, limit]);
     }
 
