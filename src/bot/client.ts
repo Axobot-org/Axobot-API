@@ -65,6 +65,12 @@ export default class DiscordClient {
         });
     }
 
+    public async getGuildCount() {
+        const client = await this.getClient();
+        await this.waitUntilReady();
+        return client.guilds.cache.size;
+    }
+
     public async resolveUser(userId: string) {
         const client = await this.getClient();
         try {

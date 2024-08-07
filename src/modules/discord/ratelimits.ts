@@ -6,6 +6,12 @@ export const getDefaultGuildConfigRateLimiter = rateLimit({
     standardHeaders: true,
 });
 
+export const getBotInfoRateLimiter = rateLimit({
+    windowMs: 20 * 1000,
+    max: 10,
+    standardHeaders: true,
+});
+
 export const getGuildConfigRateLimiter = rateLimit({
     windowMs: 20 * 1000,
     max: 10,

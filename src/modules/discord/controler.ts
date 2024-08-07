@@ -217,6 +217,15 @@ export async function getBotChangelog(req: Request, res: Response) {
     );
 }
 
+export async function getBotInfo(req: Request, res: Response) {
+    const guildCount = await discordClient.getGuildCount();
+    const flooringIndex = guildCount < 50 ? 1 : (guildCount < 1000 ? 10 : 50);
+    const data = {
+        "approximate_guild_count": Math.floor(guildCount / flooringIndex) * flooringIndex,
+    };
+    res.send(data);
+}
+
 export async function getUserGuilds(req: Request, res: Response) {
     if (!res.locals.user?.discord_token) {
         return res.status(401).send("Invalid token");
