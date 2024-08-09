@@ -49,7 +49,7 @@ export default class Database {
     private constructor(config: PoolConfig) {
         this.axobotPool = createPool({ ...config, database: "axobot" });
         this.apiPool = createPool(config);
-        this.xpPool = createPool({ ...config, database: "zbot-xp" });
+        this.xpPool = createPool({ ...config, database: "axobot-xp" });
     }
 
     public async getFullGuildConfigOptions(guildId: bigint): Promise<{ option_name: string, value: string }[]> {
