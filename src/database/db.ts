@@ -105,6 +105,10 @@ export default class Database {
         return await this.xpPool.query("SELECT `userID`, `xp` FROM `" + guildId + "` WHERE banned = 0 ORDER BY `xp` DESC LIMIT ?, ?", [page * limit, limit]);
     }
 
+    public async createGuildLeaderboard(guildId: bigint) {
+        await this.xpPool.query("CREATE TABLE `" + guildId + "` LIKE `example`;");
+    }
+
     public async deleteGuildLeaderboard(guildId: bigint) {
         await this.xpPool.query("DELETE FROM `" + guildId + "`");
     }

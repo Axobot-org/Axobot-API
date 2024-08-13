@@ -1,5 +1,6 @@
 import { ChannelType, GuildBasedChannel } from "discord.js";
 import { NextFunction, Request, Response } from "express";
+import { SqlError } from "mariadb";
 import { is } from "typia";
 
 import DiscordClient from "../../bot/client";
@@ -351,7 +352,7 @@ export async function getGuildChannels(req: Request, res: Response) {
 }
 
 
-export async function putGuildLeaderboard(req: Request, res: Response) {
+export async function putGuildLeaderboard(req: Request, res: Response, next: NextFunction) {
     // check guild ID validity
     let guildId;
     try {
@@ -394,7 +395,15 @@ export async function putGuildLeaderboard(req: Request, res: Response) {
         return;
     }
     // remove previous leaderboard
-    await db.deleteGuildLeaderboard(guildId);
+    try {
+        await db.deleteGuildLeaderboard(guildId);
+    } catch (err) {
+        if (!(err instanceof SqlError) || err.code !== "ER_NO_SUCH_TABLE") {
+            next(err);
+            return;
+        }
+        await db.createGuildLeaderboard(guildId);
+    }
     // store new leaderboard
     const leaderboardData = data.map((entry) => ({ userID: BigInt(entry.user_id), xp: entry.xp }));
     await db.setGuildLeaderboard(guildId, leaderboardData);
