@@ -133,6 +133,11 @@
             "default": false,
             "is_listed": true
         },
+        "enable_invites_tracking": {
+            "type": "boolean",
+            "default": false,
+            "is_listed": true
+        },
         "muted_role": {
             "type": "role",
             "allow_integrated_roles": false,
