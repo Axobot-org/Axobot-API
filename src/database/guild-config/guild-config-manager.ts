@@ -1,5 +1,6 @@
 import { Guild } from "discord.js";
 import JSONbig from "json-bigint";
+import { assertEquals } from "typia";
 
 import Database from "../db";
 import GuildConfigOptionsMap from "./guild-config-options.json";
@@ -20,7 +21,7 @@ export default class GuildConfigManager {
         return GuildConfigManager.instance;
     }
 
-    public static optionsList = GuildConfigOptionsMap as GuildConfigOptionsMapType;
+    public static optionsList = assertEquals<GuildConfigOptionsMapType>(GuildConfigOptionsMap);
 
     public async getOptionCategoryFromName(optionName: string): Promise<GuildConfigOptionCategory | undefined> {
         for (const [category, options] of Object.entries(GuildConfigManager.optionsList)) {

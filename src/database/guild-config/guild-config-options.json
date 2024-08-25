@@ -98,7 +98,13 @@
             "allow_integrated_roles": true,
             "allow_everyone": true,
             "default": null,
-            "is_listed": false
+            "is_listed": false,
+            "requires": [
+                {
+                    "option": "bot_news",
+                    "to_be_defined": true
+                }
+            ]
         }
     },
     "moderation": {
@@ -126,7 +132,18 @@
             "allow_integrated_roles": true,
             "allow_everyone": false,
             "default": null,
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "anti_raid",
+                    "to_be": [
+                        "smooth",
+                        "careful",
+                        "high",
+                        "extreme"
+                    ]
+                }
+            ]
         },
         "anti_scam": {
             "type": "boolean",
@@ -158,7 +175,13 @@
         "partner_color": {
             "type": "color",
             "default": 10949630,
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "partner_channel",
+                    "to_be_defined": true
+                }
+            ]
         },
         "partner_role": {
             "type": "role",
@@ -196,7 +219,13 @@
             "allow_integrated_roles": true,
             "allow_everyone": true,
             "default": null,
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "streaming_channel",
+                    "to_be_defined": true
+                }
+            ]
         },
         "streaming_channel": {
             "type": "text_channel",
@@ -218,7 +247,13 @@
         "voice_category": {
             "type": "category",
             "default": null,
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "voice_channel",
+                    "to_be_defined": true
+                }
+            ]
         },
         "voice_channel": {
             "type": "voice_channel",
@@ -232,7 +267,17 @@
             "min_length": 1,
             "max_length": 50,
             "default": "{random}",
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "voice_channel",
+                    "to_be_defined": true
+                },
+                {
+                    "option": "voice_category",
+                    "to_be_defined": true
+                }
+            ]
         },
         "voice_roles": {
             "type": "roles_list",
@@ -241,33 +286,56 @@
             "allow_integrated_roles": false,
             "allow_everyone": false,
             "default": null,
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "voice_channel",
+                    "to_be_defined": true
+                },
+                {
+                    "option": "voice_category",
+                    "to_be_defined": true
+                }
+            ]
         }
     },
     "welcome": {
         "delete_welcome_on_quick_leave": {
             "type": "boolean",
             "default": false,
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "welcome_channel",
+                    "to_be_defined": true
+                }
+            ]
         },
         "leave": {
             "type": "text",
             "min_length": 0,
             "max_length": 1800,
             "default": null,
-            "is_listed": true
-        },
-        "save_roles": {
-            "type": "boolean",
-            "default": false,
-            "is_listed": false
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "welcome_channel",
+                    "to_be_defined": true
+                }
+            ]
         },
         "welcome": {
             "type": "text",
             "min_length": 0,
             "max_length": 1800,
             "default": null,
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "welcome_channel",
+                    "to_be_defined": true
+                }
+            ]
         },
         "welcome_channel": {
             "type": "text_channel",
@@ -289,7 +357,13 @@
         "welcome_silent_mention": {
             "type": "boolean",
             "default": false,
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "welcome_channel",
+                    "to_be_defined": true
+                }
+            ]
         }
     },
     "xp": {
@@ -301,19 +375,37 @@
         "levelup_channel": {
             "type": "levelup_channel",
             "default": "any",
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "enable_xp",
+                    "to_be": true
+                }
+            ]
         },
         "levelup_msg": {
             "type": "text",
             "min_length": 0,
             "max_length": 1800,
             "default": null,
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "enable_xp",
+                    "to_be": true
+                }
+            ]
         },
         "levelup_silent_mention": {
             "type": "boolean",
             "default": false,
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "enable_xp",
+                    "to_be": true
+                }
+            ]
         },
         "noxp_channels": {
             "type": "text_channels_list",
@@ -323,7 +415,13 @@
             "allow_announcement_channels": true,
             "allow_non_nsfw_channels": true,
             "default": null,
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "enable_xp",
+                    "to_be": true
+                }
+            ]
         },
         "noxp_roles": {
             "type": "roles_list",
@@ -332,31 +430,75 @@
             "allow_integrated_roles": true,
             "allow_everyone": false,
             "default": null,
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "enable_xp",
+                    "to_be": true
+                }
+            ]
         },
         "private_leaderboard": {
             "type": "boolean",
             "default": true,
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "enable_xp",
+                    "to_be": true
+                }
+            ]
         },
         "rank_in_private": {
             "type": "boolean",
             "default": false,
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "enable_xp",
+                    "to_be": true
+                }
+            ]
         },
         "xp_decay": {
             "type": "int",
             "min": 0,
             "max": 200,
             "default": 0,
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "enable_xp",
+                    "to_be": true
+                },
+                {
+                    "option": "xp_type",
+                    "to_be": [
+                        "mee6-like",
+                        "local"
+                    ]
+                }
+            ]
         },
         "xp_rate": {
             "type": "float",
             "min": 0.1,
             "max": 3.0,
             "default": 1.0,
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "enable_xp",
+                    "to_be": true
+                },
+                {
+                    "option": "xp_type",
+                    "to_be": [
+                        "mee6-like",
+                        "local"
+                    ]
+                }
+            ]
         },
         "xp_type": {
             "type": "enum",
@@ -366,7 +508,13 @@
                 "local"
             ],
             "default": "global",
-            "is_listed": true
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "enable_xp",
+                    "to_be": true
+                }
+            ]
         }
     }
 }
