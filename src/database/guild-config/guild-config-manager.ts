@@ -109,7 +109,7 @@ export default class GuildConfigManager {
             if (!Array.isArray(value) || !value.every((item) => typeof item === "string")) {
                 throw new Error(`Value for option ${optionName} should be an array of strings`);
             }
-            return JSONbig.stringify(value);
+            return JSONbig.stringify(value.map(BigInt));
         case "color":
             if (typeof value !== "number") {
                 throw new Error(`Value for option ${optionName} should be a number`);
