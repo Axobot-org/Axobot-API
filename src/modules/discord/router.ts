@@ -1,7 +1,7 @@
 import express from "express";
 
 import { tokenCheckMiddleware } from "../auth/tokens";
-import { editGuildConfig, getBasicGuildInfo, getBotChangelog, getBotInfo, getDefaultGuildConfigOptions, getGlobalLeaderboard, getGuildChannels, getGuildConfig, getGuildLeaderboard, getGuildLeaderboardAsJson, getGuildRoles, getUserGuilds, putGuildLeaderboard } from "./controler";
+import { editGuildConfig, getBasicGuildInfo, getBotChangelog, getBotInfo, getDefaultGuildConfigOptions, getGlobalLeaderboard, getGuildChannels, getGuildConfig, getGuildLeaderboard, getGuildLeaderboardAsJson, getGuildRoleRewards, getGuildRoles, getUserGuilds, putGuildLeaderboard } from "./controler";
 import { isDiscordServerAdmin, isDiscordServerMember } from "./middlewares";
 import { editLeaderboardRateLimiter, getBotInfoRateLimiter, getDefaultGuildConfigRateLimiter, getGuildConfigRateLimiter, getGuildsListRateLimiter, getLeaderboardRateLimiter } from "./ratelimits";
 
@@ -14,6 +14,8 @@ router.get("/changelog", getBotInfoRateLimiter, getBotChangelog);
 router.get("/bot-info", getBotInfoRateLimiter, getBotInfo);
 
 router.get("/guild/:guildId(\\d+)/config", getGuildConfigRateLimiter, tokenCheckMiddleware, isDiscordServerMember, getGuildConfig);
+
+router.get("/guild/:guildId(\\d+)/role-rewards", getGuildConfigRateLimiter, tokenCheckMiddleware, isDiscordServerMember, getGuildRoleRewards);
 
 router.get("/guild/:guildId(\\d+)/leaderboard", getLeaderboardRateLimiter, getGuildLeaderboard);
 

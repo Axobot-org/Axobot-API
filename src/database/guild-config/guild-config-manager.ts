@@ -198,7 +198,7 @@ export default class GuildConfigManager {
         const defaultConfig = GuildConfigManager.optionsList;
         const config: PartialGuildConfig = Object.create(null);
         for (const categoryName of categories) {
-            config[categoryName] = await this.getGuildConfigForCategory(guildId, categoryName);
+            config[categoryName] = {};
             for (const [optionName, value] of Object.entries(defaultConfig[categoryName])) {
                 const option = setupOptions.find((item) => item.option_name === optionName);
                 if (option === undefined) {
@@ -228,22 +228,6 @@ export default class GuildConfigManager {
             }
         }
         return config;
-    }
-
-    private async getGuildConfigForCategory(guildId: bigint, category: GuildConfigOptionCategory) {
-        switch (category) {
-        case "xp":
-            return await this.getGuildXpConfig(guildId);
-        default:
-            return {};
-        }
-    }
-
-    public async getGuildXpConfig(guildId: bigint) {
-        const roleRewards = await this.db.getGuildRoleRewards(guildId);
-        return {
-            "role_rewards": roleRewards,
-        };
     }
 
 }
