@@ -59,6 +59,18 @@ export async function getGuildConfig(req: Request, res: Response) {
     res.send(config);
 }
 
+export async function getGuildRoleRewards(req: Request, res: Response) {
+    let guildId;
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res.status(400).send("Invalid guild ID");
+        return;
+    }
+    const roleRewards = await db.getGuildRoleRewards(guildId);
+    return res.json(roleRewards);
+}
+
 export async function getGlobalLeaderboard(req: Request, res: Response, next: NextFunction) {
     const page = parseInt(req.query.page as string) || 0;
     const limit = parseInt(req.query.limit as string) || 50;

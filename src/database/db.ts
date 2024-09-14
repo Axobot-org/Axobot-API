@@ -74,7 +74,7 @@ export default class Database {
     }
 
     public async addConfigEditionLog(guildId: bigint, userId: bigint, eventType: "sconfig_option_set" | "sconfig_option_reset" | "sconfig_reset_all" | "leaderboard_put", data: Record<string, unknown> | null) {
-        await this.axobotPool.query("INSERT INTO `edition_logs` (`guild_id`, `user_id`, `type`, `data`) VALUES (?, ?, ?, ?)", [guildId, userId, eventType, JSON.stringify(data)]);
+        await this.axobotPool.query("INSERT INTO `edition_logs` (`guild_id`, `user_id`, `type`, `data`, `origin`, `beta`) VALUES (?, ?, ?, ?, 'website', ?)", [guildId, userId, eventType, JSON.stringify(data), BETA]);
     }
 
     public async getGlobalLeaderboard(page = 0, limit = 50): Promise<LeaderboardPlayer[]> {

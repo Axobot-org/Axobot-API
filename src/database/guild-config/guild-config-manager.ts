@@ -1,5 +1,6 @@
 import { Guild } from "discord.js";
 import JSONbig from "json-bigint";
+import { assertEquals } from "typia";
 
 import Database from "../db";
 import GuildConfigOptionsMap from "./guild-config-options.json";
@@ -20,7 +21,7 @@ export default class GuildConfigManager {
         return GuildConfigManager.instance;
     }
 
-    public static optionsList = GuildConfigOptionsMap as GuildConfigOptionsMapType;
+    public static optionsList = assertEquals<GuildConfigOptionsMapType>(GuildConfigOptionsMap);
 
     public async getOptionCategoryFromName(optionName: string): Promise<GuildConfigOptionCategory | undefined> {
         for (const [category, options] of Object.entries(GuildConfigManager.optionsList)) {
@@ -197,7 +198,7 @@ export default class GuildConfigManager {
         const defaultConfig = GuildConfigManager.optionsList;
         const config: PartialGuildConfig = Object.create(null);
         for (const categoryName of categories) {
-            config[categoryName] = await this.getGuildConfigForCategory(guildId, categoryName);
+            config[categoryName] = {};
             for (const [optionName, value] of Object.entries(defaultConfig[categoryName])) {
                 const option = setupOptions.find((item) => item.option_name === optionName);
                 if (option === undefined) {
@@ -227,22 +228,6 @@ export default class GuildConfigManager {
             }
         }
         return config;
-    }
-
-    private async getGuildConfigForCategory(guildId: bigint, category: GuildConfigOptionCategory) {
-        switch (category) {
-        case "xp":
-            return await this.getGuildXpConfig(guildId);
-        default:
-            return {};
-        }
-    }
-
-    public async getGuildXpConfig(guildId: bigint) {
-        const roleRewards = await this.db.getGuildRoleRewards(guildId);
-        return {
-            "role_rewards": roleRewards,
-        };
     }
 
 }
