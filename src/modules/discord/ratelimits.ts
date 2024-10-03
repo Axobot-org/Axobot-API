@@ -18,6 +18,12 @@ export const getGuildConfigRateLimiter = rateLimit({
     standardHeaders: true,
 });
 
+export const getGuildConfigLogsRateLimiter = rateLimit({
+    windowMs: 20 * 1000,
+    max: 5,
+    standardHeaders: true,
+});
+
 export const getLeaderboardRateLimiter = rateLimit({
     windowMs: 15 * 1000,
     max: 6,
