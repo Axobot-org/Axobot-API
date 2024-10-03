@@ -58,6 +58,28 @@ export async function getGuildConfig(req: Request, res: Response) {
     res.send(config);
 }
 
+export async function getGuildConfigEditionLogs(req: Request, res: Response) {
+    const page = parseInt(req.query.page as string) || 0;
+    const limit = parseInt(req.query.limit as string) || 100;
+    if (page < 0 || limit < 0 || limit > 500) {
+        res.status(400).send("Invalid page or limit");
+        return;
+    }
+    let guildId;
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
+        return;
+    }
+    const editionLogs = (await db.getGuildConfigEditionLogs(guildId, page, limit)).map(log => ({
+        ...log,
+        data: JSON.parse(log.data),
+    }));
+    res.json(editionLogs);
+}
+
 export async function getGuildRoleRewards(req: Request, res: Response) {
     let guildId;
     try {
