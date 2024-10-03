@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { sign, verify } from "jsonwebtoken";
 
 import Database from "../../database/db";
+import { TokenInformation } from "../../database/models/auth";
 
 const db = Database.getInstance();
 
@@ -19,25 +20,31 @@ export async function checkToken(token: string) {
     return await db.getTokenInformation(token);
 }
 
-export async function tokenCheckMiddleware(req: Request, res: Response, next: NextFunction) {
+export async function tokenCheck(req: Request): Promise<TokenInformation | [number, string]> {
     const token = req.get("authorization");
-    // Existence du token
+    // Token existence
     if (!token) {
-        res._err = "No authentication token found in request headers";
-        return res.status(401).send(res._err);
+        return [401, "No authentication token found in request headers"];
     }
-
     try {
         const info = await checkToken(token);
         if (info === null) {
-            res._err = "Authentication token is invalid";
-            return res.status(401).send(res._err);
+            return [401, "Authentication token is invalid"];
         }
-        res.locals.user = info;
-        next();
+        return info;
     } catch (err) {
-        res._err = "Database error";
-        return res.status(500).send(res._err);
+        return [500, "Database error"];
+    }
+}
+
+export async function tokenCheckMiddleware(req: Request, res: Response, next: NextFunction) {
+    const checkResult = await tokenCheck(req);
+    if (Array.isArray(checkResult)) {
+        res._err = checkResult[1];
+        res.status(checkResult[0]).send(res._err);
+    } else {
+        res.locals.user = checkResult;
+        next();
     }
 }
 

@@ -9,6 +9,10 @@ const EMBED_COLOR = 0x66bb6a;
 
 export async function postWebhookNotification(req: Request<{ webhook_id: string, webhook_token: string }, unknown, AnyCrowdinEvent | CrowdinBatchEvents>, res: Response) {
     const webhookPath = req.params.webhook_id + "/" + req.params.webhook_token;
+    if (!/^\d+\/[\w-]+$/.test(webhookPath)) {
+        res.status(400).send("Invalid webhook path");
+        return;
+    }
     // assign events to our lists
     const stringEvents: CrowdinStringEvent[] = [];
     const fileEvents: CrowdinFileEvent[] = [];
