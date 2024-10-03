@@ -1,6 +1,8 @@
 import { Guild } from "discord.js";
+import { Request, Response } from "express";
 
 import DiscordClient from "../../../bot/client";
+import { tokenCheck } from "../../auth/tokens";
 import { LeaderboardGuildData } from "../types/guilds";
 import { getLevelFromGeneralXp, getLevelFromMEE6Xp, getXpFromGeneralLevel, getXpFromMEE6Level } from "./xp";
 
@@ -33,5 +35,26 @@ export async function getGuildInfo(guild: Guild): Promise<LeaderboardGuildData> 
         name: guild.name,
         icon: guild.iconURL({ size: 256 }),
     };
+}
 
+export async function checkUserAuthentificationAndPermission(req: Request, res: Response): Promise<boolean> {
+    const tokenCheckError = await tokenCheck(req);
+    if (Array.isArray(tokenCheckError)) {
+        res._err = tokenCheckError[1];
+        res.status(tokenCheckError[0]).send(res._err);
+        return false;
+    }
+    if (res.locals.user === undefined) {
+        res._err = "Invalid token";
+        res.status(401).send(res._err);
+        return false;
+    }
+    const userId = res.locals.user.user_id.toString();
+    const guildId = req.params.guildId;
+    if (!await discordClient.checkUserPresenceInGuild(guildId, userId)) {
+        res._err = "User is not a member of this guild";
+        res.status(401).send(res._err);
+        return false;
+    }
+    return true;
 }
