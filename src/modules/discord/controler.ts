@@ -8,7 +8,7 @@ import Database from "../../database/db";
 import GuildConfigManager from "../../database/guild-config/guild-config-manager";
 import { GuildConfigOptionCategory, GuildConfigOptionCategoryNames } from "../../database/guild-config/guild-config-types";
 import { LeaderboardPlayer } from "../../database/models/xp";
-import { LeaderboardImportUserData } from "./types/guilds";
+import { LeaderboardImportUserData, RoleRewardsPUTData } from "./types/guilds";
 import { checkUserAuthentificationAndPermission, getGuildInfo, transformLeaderboard } from "./utils/leaderboard";
 
 
@@ -441,8 +441,58 @@ export async function putGuildLeaderboard(req: Request, res: Response, next: Nex
     await db.setGuildLeaderboard(guildId, leaderboardData);
     // send success code
     await db.addConfigEditionLog(guildId, res.locals.user.user_id, "leaderboard_put", null);
-    console.log(`Leaderboard for guild ${guildId} has been edited by ${res.locals.user?.user_id}`);
+    console.log(`Leaderboard for guild ${guildId} has been edited by ${res.locals.user.user_id}`);
     res.sendStatus(204);
+}
+
+export async function putRoleRewards(req: Request, res: Response) {
+    // check user and guild ID validity
+    if (res.locals.user === undefined) {
+        res.status(401).send("Invalid token");
+        return;
+    }
+    let guildId;
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
+        return;
+    }
+    const guild = await discordClient.resolveGuild(guildId.toString());
+    if (guild === null) {
+        res._err = "Guild not found";
+        res.status(404).send(res._err);
+        return;
+    }
+    // check data validity
+    const data = req.body;
+    if (!is<RoleRewardsPUTData[]>(data) || data.length === 0) {
+        res._err = "Invalid data";
+        res.status(400).send(res._err);
+        return;
+    }
+    const parsedData = data.map(row => ({ ...row, roleId: BigInt(row.roleId), level: BigInt(row.level) }));
+    // remove previous rewards
+    const previousRewards = await db.getGuildRoleRewards(guildId);
+    const rewardsToRemove = previousRewards.filter(
+        (reward) => !parsedData.some((newReward) => reward.level === newReward.level && reward.roleId === newReward.roleId)
+    ).map(reward => reward.id);
+    const rewardsToAdd = parsedData.filter(
+        (newReward) => !previousRewards.some((reward) => reward.level === newReward.level && reward.roleId === newReward.roleId)
+    );
+    // remove outdated rewards
+    if (rewardsToRemove.length > 0) {
+        await db.removeGuildRoleRewards(guildId, rewardsToRemove);
+    }
+    // add new rewards
+    if (rewardsToAdd.length > 0) {
+        await db.setGuildRoleRewards(guildId, rewardsToAdd);
+    }
+    await db.addConfigEditionLog(guildId, res.locals.user.user_id, "role_rewards_put", { newRewards: parsedData });
+    console.log(`Role-rewards for guild ${guildId} has been edited by ${res.locals.user.user_id}`);
+    const newRewards = await db.getGuildRoleRewards(guildId);
+    res.send(newRewards);
 }
 
 export async function editGuildConfig(req: Request, res: Response) {

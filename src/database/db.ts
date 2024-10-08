@@ -73,7 +73,7 @@ export default class Database {
         await this.axobotPool.query("DELETE FROM `serverconfig` WHERE `guild_id` = ? AND `beta` = ?", [guildId, BETA]);
     }
 
-    public async addConfigEditionLog(guildId: bigint, userId: bigint, eventType: "sconfig_option_set" | "sconfig_option_reset" | "sconfig_reset_all" | "leaderboard_put", data: Record<string, unknown> | null) {
+    public async addConfigEditionLog(guildId: bigint, userId: bigint, eventType: "sconfig_option_set" | "sconfig_option_reset" | "sconfig_reset_all" | "leaderboard_put" | "role_rewards_put", data: Record<string, unknown> | null) {
         await this.axobotPool.query("INSERT INTO `edition_logs` (`guild_id`, `user_id`, `type`, `data`, `origin`, `beta`) VALUES (?, ?, ?, ?, 'website', ?)", [guildId, userId, eventType, JSON.stringify(data), BETA]);
     }
 
@@ -153,6 +153,17 @@ export default class Database {
             level: BigInt(row.level),
             addedAt: new Date(row.added_at),
         }));
+    }
+
+    public async removeGuildRoleRewards(guildId: bigint, ids: bigint[]) {
+        await this.axobotPool.query("DELETE FROM `roles_rewards` WHERE `guild` = ? AND `ID` IN (?)", [guildId, ids]);
+    }
+
+    public async setGuildRoleRewards(guildId: bigint, data: { roleId: bigint, level: bigint }[]) {
+        await this.axobotPool.batch(
+            "INSERT INTO `roles_rewards` (`guild`, `role`, `level`) VALUES (?, ?, ?)",
+            data.map((row) => [guildId, row.roleId, row.level]),
+        );
     }
 
 

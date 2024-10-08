@@ -32,3 +32,8 @@ interface LeaderboardImportUserData {
     user_id: string;
     xp: number;
 }
+
+interface RoleRewardsPUTData {
+    roleId: string;
+    level: string;
+}
