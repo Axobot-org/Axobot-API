@@ -8,6 +8,7 @@ import Database from "../../database/db";
 import GuildConfigManager from "../../database/guild-config/guild-config-manager";
 import { GuildConfigOptionCategory, GuildConfigOptionCategoryNames } from "../../database/guild-config/guild-config-types";
 import { LeaderboardPlayer } from "../../database/models/xp";
+import setCacheControl from "../../utils/cache_control";
 import { LeaderboardImportUserData, RoleRewardsPUTData } from "./types/guilds";
 import { checkUserAuthentificationAndPermission, getGuildInfo, transformLeaderboard } from "./utils/leaderboard";
 
@@ -237,6 +238,7 @@ export async function getBotChangelog(req: Request, res: Response) {
         return;
     }
     const changelog = await db.getBotChangelog();
+    setCacheControl(res, 86400);
     res.send(
         changelog.map((entry) => ({
             "version": entry.version,
@@ -252,6 +254,7 @@ export async function getBotInfo(req: Request, res: Response) {
     const data = {
         "approximate_guild_count": Math.floor(guildCount / flooringIndex) * flooringIndex,
     };
+    setCacheControl(res, 86400);
     res.send(data);
 }
 
