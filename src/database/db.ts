@@ -78,7 +78,7 @@ export default class Database {
     }
 
     public async getGuildConfigEditionLogs(guildId: bigint, page = 0, limit = 50) {
-        return await this.axobotPool.query<{ user_id: bigint, type: string, data: string, origin: string, date: Date }[]>("SELECT `user_id`, `type`, `data`, `origin`, `date` FROM `edition_logs` WHERE `guild_id` = ? AND `beta` = ? ORDER BY `date` DESC LIMIT ?, ?", [guildId, BETA, page * limit, limit]);
+        return await this.axobotPool.query<{ user_id: bigint, type: string, data: string, origin: string, date: Date }[]>("SELECT `id`, `user_id`, `type`, `data`, `origin`, `date` FROM `edition_logs` WHERE `guild_id` = ? AND `beta` = ? ORDER BY `date` DESC LIMIT ?, ?", [guildId, BETA, page * limit, limit]);
     }
 
     public async getGlobalLeaderboard(page = 0, limit = 50): Promise<LeaderboardPlayer[]> {
