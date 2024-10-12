@@ -74,10 +74,17 @@ export async function getGuildConfigEditionLogs(req: Request, res: Response) {
         res.status(400).send(res._err);
         return;
     }
-    const editionLogs = (await db.getGuildConfigEditionLogs(guildId, page, limit)).map(log => ({
-        ...log,
-        data: JSON.parse(log.data),
-    }));
+    const editionLogs = await Promise.all(
+        (await db.getGuildConfigEditionLogs(guildId, page, limit)).map(async (log) => {
+            const user = await discordClient.getRawUserData(log.user_id.toString());
+            return {
+                ...log,
+                data: JSON.parse(log.data),
+                "username": user?.global_name ?? user?.username ?? null,
+                "avatar": discordClient.getAvatarUrlFromHash(user?.avatar_hash ?? null, log.user_id),
+            };
+        })
+    );
     res.json(editionLogs);
 }
 
