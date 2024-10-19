@@ -36,11 +36,13 @@ function callbackDockerhub(callbackUrl: string) {
 export async function postWebhookNotification(req: Request, res: Response) {
     const webhookPath = req.params.webhook_id + "/" + req.params.webhook_token;
     if (!/^\d+\/[\w-]+$/.test(webhookPath)) {
-        res.status(400).send("Invalid webhook path");
+        res._err = "Invalid webhook path";
+        res.status(400).send(res._err);
         return;
     }
     if (!is<MinimalDockerPushEvent>(req.body)) {
-        res.status(400).send("Invalid request body");
+        res._err = "Invalid request body";
+        res.status(400).send(res._err);
         return;
     }
     const repo = req.body.repository;
@@ -56,7 +58,8 @@ export async function postWebhookNotification(req: Request, res: Response) {
         await callbackDockerhub(callbackUrl);
     } catch (err) {
         console.error("Failed to send callback:", err);
-        res.status(400).send("Failed to send callback");
+        res._err = "Failed to send callback";
+        res.status(400).send(res._err);
         return;
     }
     res.send("ok");
