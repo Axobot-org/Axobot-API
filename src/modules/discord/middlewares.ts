@@ -12,6 +12,13 @@ export async function isDiscordServerMember(req: Request, res: Response, next: N
     }
     const userId = res.locals.user.user_id.toString();
     const guildId = req.params.guildId;
+    try {
+        BigInt(guildId);
+    } catch (e) {
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
+        return;
+    }
     const result = await discordClient.checkUserPresenceInGuild(guildId, userId);
     if (!result) {
         res._err = "User is not a member of this guild";
@@ -29,6 +36,13 @@ export async function isDiscordServerAdmin(req: Request, res: Response, next: Ne
     }
     const userId = res.locals.user.user_id.toString();
     const guildId = req.params.guildId;
+    try {
+        BigInt(guildId);
+    } catch (e) {
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
+        return;
+    }
     const result = await discordClient.checkUserPermissionInGuild(guildId, userId, "Administrator");
     if (!result) {
         res._err = "User is not an admin of this guild";
