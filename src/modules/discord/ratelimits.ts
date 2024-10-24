@@ -36,6 +36,12 @@ export const getGuildsListRateLimiter = rateLimit({
     standardHeaders: true,
 });
 
+export const getGuildChannelAndRolesRateLimiter = rateLimit({
+    windowMs: 20 * 1000,
+    max: 8,
+    standardHeaders: true,
+});
+
 export const editLeaderboardRateLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 2,
