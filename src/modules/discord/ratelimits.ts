@@ -18,9 +18,27 @@ export const getGuildConfigRateLimiter = rateLimit({
     standardHeaders: true,
 });
 
+export const getGuildConfigLogsRateLimiter = rateLimit({
+    windowMs: 20 * 1000,
+    max: 5,
+    standardHeaders: true,
+});
+
 export const getLeaderboardRateLimiter = rateLimit({
     windowMs: 15 * 1000,
     max: 6,
+    standardHeaders: true,
+});
+
+export const getGuildsListRateLimiter = rateLimit({
+    windowMs: 15 * 1000,
+    max: 3,
+    standardHeaders: true,
+});
+
+export const getGuildChannelAndRolesRateLimiter = rateLimit({
+    windowMs: 20 * 1000,
+    max: 8,
     standardHeaders: true,
 });
 
@@ -30,8 +48,8 @@ export const editLeaderboardRateLimiter = rateLimit({
     standardHeaders: true,
 });
 
-export const getGuildsListRateLimiter = rateLimit({
-    windowMs: 15 * 1000,
-    max: 3,
+export const editRoleRewardsRateLimiter = rateLimit({
+    windowMs: 20 * 1000,
+    max: 4,
     standardHeaders: true,
 });

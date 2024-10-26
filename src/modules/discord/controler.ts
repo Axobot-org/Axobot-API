@@ -8,10 +8,9 @@ import Database from "../../database/db";
 import GuildConfigManager from "../../database/guild-config/guild-config-manager";
 import { GuildConfigOptionCategory, GuildConfigOptionCategoryNames } from "../../database/guild-config/guild-config-types";
 import { LeaderboardPlayer } from "../../database/models/xp";
-import { tokenCheckMiddleware } from "../auth/tokens";
-import { isDiscordServerMember } from "./middlewares";
-import { LeaderboardImportUserData } from "./types/guilds";
-import { getGuildInfo, transformLeaderboard } from "./utils/leaderboard";
+import setCacheControl from "../../utils/cache_control";
+import { LeaderboardImportUserData, RoleRewardsPUTData } from "./types/guilds";
+import { checkUserAuthentificationAndPermission, getGuildInfo, transformLeaderboard } from "./utils/leaderboard";
 
 
 const db = Database.getInstance();
@@ -47,7 +46,8 @@ export async function getGuildConfig(req: Request, res: Response) {
     try {
         guildId = BigInt(req.params.guildId);
     } catch (e) {
-        res.status(400).send("Invalid guild ID");
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
         return;
     }
     const categories = (
@@ -59,16 +59,46 @@ export async function getGuildConfig(req: Request, res: Response) {
     res.send(config);
 }
 
+export async function getGuildConfigEditionLogs(req: Request, res: Response) {
+    const page = parseInt(req.query.page as string) || 0;
+    const limit = parseInt(req.query.limit as string) || 100;
+    if (page < 0 || limit < 0 || limit > 500) {
+        res.status(400).send("Invalid page or limit");
+        return;
+    }
+    let guildId;
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
+        return;
+    }
+    const editionLogs = await Promise.all(
+        (await db.getGuildConfigEditionLogs(guildId, page, limit)).map(async (log) => {
+            const user = await discordClient.getRawUserData(log.user_id.toString());
+            return {
+                ...log,
+                data: JSON.parse(log.data),
+                "username": user?.global_name ?? user?.username ?? null,
+                "avatar": discordClient.getAvatarUrlFromHash(user?.avatar_hash ?? null, log.user_id),
+            };
+        })
+    );
+    res.json(editionLogs);
+}
+
 export async function getGuildRoleRewards(req: Request, res: Response) {
     let guildId;
     try {
         guildId = BigInt(req.params.guildId);
     } catch (e) {
-        res.status(400).send("Invalid guild ID");
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
         return;
     }
     const roleRewards = await db.getGuildRoleRewards(guildId);
-    return res.json(roleRewards);
+    res.json(roleRewards);
 }
 
 export async function getGlobalLeaderboard(req: Request, res: Response, next: NextFunction) {
@@ -104,7 +134,8 @@ export async function getGuildLeaderboard(req: Request, res: Response, next: Nex
     try {
         guildId = BigInt(req.params.guildId);
     } catch (e) {
-        res.status(400).send("Invalid guild ID");
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
         return;
     }
     const guild = await discordClient.resolveGuild(guildId.toString());
@@ -119,12 +150,8 @@ export async function getGuildLeaderboard(req: Request, res: Response, next: Nex
         return;
     }
     const isPrivateLeaderboard = await configManager.getGuildConfigOptionValue(guildId, "private_leaderboard");
-    if (isPrivateLeaderboard) {
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
-        const err = await tokenCheckMiddleware(req, res, () => { }) || await isDiscordServerMember(req, res, () => { });
-        if (err) {
-            return err;
-        }
+    if (isPrivateLeaderboard && !(await checkUserAuthentificationAndPermission(req, res))) {
+        return;
     }
     const xpType = await configManager.getGuildConfigOptionValue(guildId, "xp_type") as string;
     let players, playersCount;
@@ -168,7 +195,8 @@ export async function getGuildLeaderboardAsJson(req: Request, res: Response, nex
     try {
         guildId = BigInt(req.params.guildId);
     } catch (e) {
-        res.status(400).send("Invalid guild ID");
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
         return;
     }
     const guild = await discordClient.resolveGuild(guildId.toString());
@@ -183,12 +211,8 @@ export async function getGuildLeaderboardAsJson(req: Request, res: Response, nex
         return;
     }
     const isPrivateLeaderboard = await configManager.getGuildConfigOptionValue(guildId, "private_leaderboard");
-    if (isPrivateLeaderboard) {
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
-        const err = await tokenCheckMiddleware(req, res, () => { }) || await isDiscordServerMember(req, res, () => { });
-        if (err) {
-            return err;
-        }
+    if (isPrivateLeaderboard && !(await checkUserAuthentificationAndPermission(req, res))) {
+        return;
     }
     const xpType = await configManager.getGuildConfigOptionValue(guildId, "xp_type") as string;
     let leaderboard: LeaderboardPlayer[];
@@ -221,6 +245,7 @@ export async function getBotChangelog(req: Request, res: Response) {
         return;
     }
     const changelog = await db.getBotChangelog();
+    setCacheControl(res, 86400);
     res.send(
         changelog.map((entry) => ({
             "version": entry.version,
@@ -236,12 +261,14 @@ export async function getBotInfo(req: Request, res: Response) {
     const data = {
         "approximate_guild_count": Math.floor(guildCount / flooringIndex) * flooringIndex,
     };
+    setCacheControl(res, 86400);
     res.send(data);
 }
 
 export async function getUserGuilds(req: Request, res: Response) {
     if (!res.locals.user?.discord_token) {
-        return res.status(401).send("Invalid token");
+        res.status(401).send("Invalid token");
+        return;
     }
     const userGuilds = await discordClient.getGuildsFromOauth(res.locals.user.discord_token);
 
@@ -265,7 +292,8 @@ export async function getBasicGuildInfo(req: Request, res: Response) {
     try {
         guildId = BigInt(req.params.guildId);
     } catch (e) {
-        res.status(400).send("Invalid guild ID");
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
         return;
     }
     const guild = await discordClient.resolveGuild(guildId.toString());
@@ -274,7 +302,7 @@ export async function getBasicGuildInfo(req: Request, res: Response) {
         res.status(404).send(res._err);
         return;
     }
-    return res.json(await discordClient.getBasicGuildInfo({ baseGuild: guild, userId: res.locals.user!.user_id.toString() }));
+    res.json(await discordClient.getBasicGuildInfo({ baseGuild: guild, userId: res.locals.user!.user_id.toString() }));
 }
 
 export async function getGuildRoles(req: Request, res: Response) {
@@ -282,7 +310,8 @@ export async function getGuildRoles(req: Request, res: Response) {
     try {
         guildId = BigInt(req.params.guildId);
     } catch (e) {
-        res.status(400).send("Invalid guild ID");
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
         return;
     }
     const guild = await discordClient.resolveGuild(guildId.toString());
@@ -302,7 +331,7 @@ export async function getGuildRoles(req: Request, res: Response) {
         "permissions": role.permissions.bitfield,
         "managed": role.managed,
     })).sort((a, b) => a.position - b.position);
-    return res.json(roles);
+    res.json(roles);
 }
 
 export async function getGuildChannels(req: Request, res: Response) {
@@ -310,7 +339,8 @@ export async function getGuildChannels(req: Request, res: Response) {
     try {
         guildId = BigInt(req.params.guildId);
     } catch (e) {
-        res.status(400).send("Invalid guild ID");
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
         return;
     }
     const guild = await discordClient.resolveGuild(guildId.toString());
@@ -360,7 +390,7 @@ export async function getGuildChannels(req: Request, res: Response) {
             const { positionId, ...cleanObject } = channel;
             return cleanObject;
         });
-    return res.json(channels);
+    res.json(channels);
 }
 
 
@@ -421,8 +451,58 @@ export async function putGuildLeaderboard(req: Request, res: Response, next: Nex
     await db.setGuildLeaderboard(guildId, leaderboardData);
     // send success code
     await db.addConfigEditionLog(guildId, res.locals.user.user_id, "leaderboard_put", null);
-    console.log(`Leaderboard for guild ${guildId} has been edited by ${res.locals.user?.user_id}`);
+    console.log(`Leaderboard for guild ${guildId} has been edited by ${res.locals.user.user_id}`);
     res.sendStatus(204);
+}
+
+export async function putRoleRewards(req: Request, res: Response) {
+    // check user and guild ID validity
+    if (res.locals.user === undefined) {
+        res.status(401).send("Invalid token");
+        return;
+    }
+    let guildId;
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
+        return;
+    }
+    const guild = await discordClient.resolveGuild(guildId.toString());
+    if (guild === null) {
+        res._err = "Guild not found";
+        res.status(404).send(res._err);
+        return;
+    }
+    // check data validity
+    const data = req.body;
+    if (!is<RoleRewardsPUTData[]>(data)) {
+        res._err = "Invalid data";
+        res.status(400).send(res._err);
+        return;
+    }
+    const parsedData = data.map(row => ({ ...row, roleId: BigInt(row.roleId), level: BigInt(row.level) }));
+    // remove previous rewards
+    const previousRewards = await db.getGuildRoleRewards(guildId);
+    const rewardsToRemove = previousRewards.filter(
+        (reward) => !parsedData.some((newReward) => reward.level === newReward.level && reward.roleId === newReward.roleId)
+    ).map(reward => reward.id);
+    const rewardsToAdd = parsedData.filter(
+        (newReward) => !previousRewards.some((reward) => reward.level === newReward.level && reward.roleId === newReward.roleId)
+    );
+    // remove outdated rewards
+    if (rewardsToRemove.length > 0) {
+        await db.removeGuildRoleRewards(guildId, rewardsToRemove);
+    }
+    // add new rewards
+    if (rewardsToAdd.length > 0) {
+        await db.setGuildRoleRewards(guildId, rewardsToAdd);
+    }
+    await db.addConfigEditionLog(guildId, res.locals.user.user_id, "role_rewards_put", { newRewards: parsedData });
+    console.log(`Role-rewards for guild ${guildId} has been edited by ${res.locals.user.user_id}`);
+    const newRewards = await db.getGuildRoleRewards(guildId);
+    res.send(newRewards);
 }
 
 export async function editGuildConfig(req: Request, res: Response) {
@@ -449,7 +529,8 @@ export async function editGuildConfig(req: Request, res: Response) {
     const config = req.body;
     if (!is<Record<string, unknown>>(config) || Object.keys(config).length === 0) {
         res._err = "Invalid config";
-        return res.status(400).send(res._err);
+        res.status(400).send(res._err);
+        return;
     }
     const errors: string[] = [];
     for (const [optionName, value] of Object.entries(config)) {
@@ -461,7 +542,8 @@ export async function editGuildConfig(req: Request, res: Response) {
         }
     }
     if (errors.length > 0) {
-        return res.status(400).send(errors);
+        res.status(400).send(errors);
+        return;
     }
     // store new config into database and log the config change
     for (const [optionName, value] of Object.entries(config)) {
