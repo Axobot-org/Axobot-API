@@ -1,10 +1,12 @@
 import { createPool, Pool, PoolConfig, Types } from "mariadb";
 
 import { TokenInformation } from "./models/auth";
+import { DBRssFeed, RawRssFeed, rawToDBRssFeed } from "./models/rss";
 import { DBRawUserData } from "./models/users";
 import { DBRoleReward, LeaderboardPlayer } from "./models/xp";
 
 const BETA = process.env.DISCORD_ENTITY_ID === "1";
+const RSS_TABLE = BETA ? "rss_feed_beta" : "rss_feed";
 
 const DB_CONFIG: PoolConfig = {
     host: process.env.DATABASE_HOST,
@@ -164,6 +166,25 @@ export default class Database {
             "INSERT INTO `roles_rewards` (`guild`, `role`, `level`) VALUES (?, ?, ?)",
             data.map((row) => [guildId, row.roleId, row.level]),
         );
+    }
+
+    public async getGuildRssFeeds(guildId: bigint): Promise<DBRssFeed[]> {
+        const result = await this.axobotPool.query<RawRssFeed[]>("SELECT `ID`, `channel`, `type`, `link`, `date`, `structure`, `roles`, `use_embed`, `embed`, `silent_mention`, `recent_errors`, `enabled`, `added_at` FROM `" + RSS_TABLE + "` WHERE `guild` = ?", [guildId]);
+        return result.map(rawToDBRssFeed);
+    }
+
+    public async getGuildRssFeed(guildId: bigint, feedId: bigint): Promise<DBRssFeed | null> {
+        const result = await this.axobotPool.query<RawRssFeed[]>("SELECT `ID`, `channel`, `type`, `link`, `date`, `structure`, `roles`, `use_embed`, `embed`, `silent_mention`, `recent_errors`, `enabled`, `added_at` FROM `" + RSS_TABLE + "` WHERE `guild` = ? AND `ID` = ?", [guildId, feedId]);
+        return result[0] ? rawToDBRssFeed(result[0]) : null;
+    }
+
+    public async checkGuildRssFeedId(guildId: bigint, feedId: bigint): Promise<boolean> {
+        const result = await this.axobotPool.query("SELECT COUNT(*) AS `count` FROM `" + RSS_TABLE + "` WHERE `guild` = ? AND `ID` = ?", [guildId, feedId]);
+        return result[0].count > 0;
+    }
+
+    public async toggleRssFeed(guildId: bigint, feedId: bigint) {
+        await this.axobotPool.query("UPDATE `" + RSS_TABLE + "` SET `enabled` = NOT `enabled` WHERE `guild` = ? AND `ID` = ?", [guildId, feedId]);
     }
 
 

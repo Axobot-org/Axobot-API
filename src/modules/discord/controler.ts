@@ -560,3 +560,42 @@ export async function editGuildConfig(req: Request, res: Response) {
     const updatedConfig = await configManager.getGuildConfigOption(guildId, Object.keys(config));
     res.send(updatedConfig);
 }
+
+export async function getGuildRssFeeds(req: Request, res: Response) {
+    let guildId;
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
+        return;
+    }
+    const rssFeeds = await db.getGuildRssFeeds(guildId);
+    res.json(rssFeeds);
+}
+
+export async function toggleRssFeed(req: Request, res: Response) {
+    let guildId, feedId;
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
+        return;
+    }
+    try {
+        feedId = BigInt(req.params.feedId);
+    } catch (e) {
+        res._err = "Invalid feed ID";
+        res.status(400).send(res._err);
+        return;
+    }
+    if (!await db.checkGuildRssFeedId(guildId, feedId)) {
+        res._err = "Invalid feed ID";
+        res.status(400).send(res._err);
+        return;
+    }
+    await db.toggleRssFeed(guildId, feedId);
+    const updatedFeed = await db.getGuildRssFeed(guildId, feedId);
+    res.json(updatedFeed);
+}

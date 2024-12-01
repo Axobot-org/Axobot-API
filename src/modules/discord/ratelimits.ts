@@ -53,3 +53,9 @@ export const editRoleRewardsRateLimiter = rateLimit({
     max: 4,
     standardHeaders: true,
 });
+
+export const editRssFeedRateLimiter = rateLimit({
+    windowMs: 20 * 1000,
+    max: 8,
+    standardHeaders: true,
+});
