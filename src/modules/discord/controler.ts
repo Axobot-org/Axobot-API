@@ -9,7 +9,7 @@ import GuildConfigManager from "../../database/guild-config/guild-config-manager
 import { GuildConfigOptionCategory, GuildConfigOptionCategoryNames } from "../../database/guild-config/guild-config-types";
 import { LeaderboardPlayer } from "../../database/models/xp";
 import setCacheControl from "../../utils/cache_control";
-import { LeaderboardImportUserData, RoleRewardsPUTData } from "./types/guilds";
+import { LeaderboardImportUserData, RoleRewardsPUTData, RssFeedPUTData } from "./types/guilds";
 import { checkUserAuthentificationAndPermission, getGuildInfo, transformLeaderboard } from "./utils/leaderboard";
 
 
@@ -483,6 +483,13 @@ export async function putRoleRewards(req: Request, res: Response) {
         return;
     }
     const parsedData = data.map(row => ({ ...row, roleId: BigInt(row.roleId), level: BigInt(row.level) }));
+    // check for max rewards limit
+    const rewardsLimit = await configManager.getGuildConfigOptionValue(guildId, "rr_max_number") as number;
+    if (data.length > rewardsLimit) {
+        res._err = `Too many role-rewards, max is ${rewardsLimit}`;
+        res.status(400).send(res._err);
+        return;
+    }
     // remove previous rewards
     const previousRewards = await db.getGuildRoleRewards(guildId);
     const rewardsToRemove = previousRewards.filter(
@@ -557,7 +564,7 @@ export async function editGuildConfig(req: Request, res: Response) {
         }
     }
     // send updated config
-    const updatedConfig = await configManager.getGuildConfigOption(guildId, Object.keys(config));
+    const updatedConfig = await configManager.getGuildConfigOptions(guildId, Object.keys(config));
     res.send(updatedConfig);
 }
 
@@ -598,4 +605,47 @@ export async function toggleRssFeed(req: Request, res: Response) {
     await db.toggleRssFeed(guildId, feedId);
     const updatedFeed = await db.getGuildRssFeed(guildId, feedId);
     res.json(updatedFeed);
+}
+
+export async function editRssFeeds(req: Request, res: Response) {
+    let guildId;
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
+        return;
+    }
+    // check data validity
+    const data = req.body;
+    if (!is<RssFeedPUTData>(data) || (!data.add && !data.edit && !data.remove)) {
+        res._err = "Invalid data";
+        res.status(400).send(res._err);
+        return;
+    }
+    // check for max feeds limit
+    const feedsLimit = await configManager.getGuildConfigOptionValue(guildId, "rss_max_number") as number;
+    const currentFeeds = await db.getGuildRssFeeds(guildId);
+    const newFeedsCount = data.add?.length ?? 0;
+    const removedFeedsCount = data.remove?.length ?? 0;
+    if (currentFeeds.length + newFeedsCount - removedFeedsCount > feedsLimit) {
+        res._err = `Too many feeds, max is ${feedsLimit}`;
+        res.status(400).send(res._err);
+        return;
+    }
+    // add missing feeds
+    for (const feed of data.add ?? []) {
+        await db.addRssFeed(guildId, feed);
+    }
+    // edit existing feeds
+    for (const feed of data.edit ?? []) {
+        await db.editRssFeed(guildId, feed);
+    }
+    // remove feeds to delete
+    for (const feedId of data.remove ?? []) {
+        await db.deleteRssFeed(guildId, BigInt(feedId));
+    }
+    // return edited list
+    const updatedFeedList = await db.getGuildRssFeeds(guildId);
+    res.json(updatedFeedList);
 }

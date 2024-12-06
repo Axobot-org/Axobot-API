@@ -1,3 +1,5 @@
+import { RssFeedPUTData } from "../../modules/discord/types/guilds";
+
 export interface RawRssFeed {
     ID: bigint;
     channel: bigint;
@@ -8,11 +10,17 @@ export interface RawRssFeed {
     roles: string;
     use_embed: boolean;
     embed: string;
-    silent_mention: string;
+    silent_mention: boolean;
     recent_errors: number;
     enabled: boolean;
     added_at: string;
 }
+
+export const VALID_RSS_FEED_TYPES = ["bluesky", "deviantart", "twitch", "web", "yt"] as const;
+
+export type RssFeedForCreation = Exclude<RssFeedPUTData["add"], undefined>[number];
+
+export type RssFeedForEdition = Exclude<RssFeedPUTData["edit"], undefined>[number];
 
 export interface DBRssFeed {
     id: bigint;
