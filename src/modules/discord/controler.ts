@@ -11,11 +11,13 @@ import { LeaderboardPlayer } from "../../database/models/xp";
 import setCacheControl from "../../utils/cache_control";
 import { LeaderboardImportUserData, RoleRewardsPUTData, RssFeedPUTData } from "./types/guilds";
 import { checkUserAuthentificationAndPermission, getGuildInfo, transformLeaderboard } from "./utils/leaderboard";
+import RssExternalApisManager from "./utils/rss";
 
 
 const db = Database.getInstance();
 const discordClient = DiscordClient.getInstance();
 const configManager = GuildConfigManager.getInstance();
+const rssExternalApisManager = RssExternalApisManager.getInstance();
 
 function parseCategoriesParameter(category: unknown) {
     if (category === "all") {
@@ -577,7 +579,13 @@ export async function getGuildRssFeeds(req: Request, res: Response) {
         res.status(400).send(res._err);
         return;
     }
-    const rssFeeds = await db.getGuildRssFeeds(guildId);
+    const rssFeeds = await Promise.all((await db.getGuildRssFeeds(guildId)).map(async (feed) => {
+        const displayName = await rssExternalApisManager.getRssFeedDisplayName(feed);
+        return {
+            ...feed,
+            "displayName": displayName,
+        };
+    }));
     res.json(rssFeeds);
 }
 
