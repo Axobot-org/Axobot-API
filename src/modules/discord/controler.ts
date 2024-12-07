@@ -612,7 +612,13 @@ export async function toggleRssFeed(req: Request, res: Response) {
     }
     await db.toggleRssFeed(guildId, feedId);
     const updatedFeed = await db.getGuildRssFeed(guildId, feedId);
-    res.json(updatedFeed);
+    if (updatedFeed === null) {
+        res._err = "Invalid feed ID";
+        res.status(400).send(res._err);
+        return;
+    }
+    const displayName = await rssExternalApisManager.getRssFeedDisplayName(updatedFeed);
+    res.json({ ...updatedFeed, displayName });
 }
 
 export async function editRssFeeds(req: Request, res: Response) {
@@ -654,6 +660,12 @@ export async function editRssFeeds(req: Request, res: Response) {
         await db.deleteRssFeed(guildId, BigInt(feedId));
     }
     // return edited list
-    const updatedFeedList = await db.getGuildRssFeeds(guildId);
+    const updatedFeedList = await Promise.all((await db.getGuildRssFeeds(guildId)).map(async (feed) => {
+        const displayName = await rssExternalApisManager.getRssFeedDisplayName(feed);
+        return {
+            ...feed,
+            "displayName": displayName,
+        };
+    }));
     res.json(updatedFeedList);
 }
