@@ -7,6 +7,8 @@ import DiscordClient from "../../bot/client";
 import Database from "../../database/db";
 import GuildConfigManager from "../../database/guild-config/guild-config-manager";
 import { GuildConfigOptionCategory, GuildConfigOptionCategoryNames } from "../../database/guild-config/guild-config-types";
+import { EditionLogType } from "../../database/models/misc-db-types";
+import { DBRssFeed } from "../../database/models/rss";
 import { LeaderboardPlayer } from "../../database/models/xp";
 import setCacheControl from "../../utils/cache_control";
 import { LeaderboardImportUserData, RoleRewardsPUTData, RssFeedPUTData } from "./types/guilds";
@@ -452,7 +454,7 @@ export async function putGuildLeaderboard(req: Request, res: Response, next: Nex
     const leaderboardData = data.map((entry) => ({ userID: BigInt(entry.user_id), xp: entry.xp }));
     await db.setGuildLeaderboard(guildId, leaderboardData);
     // send success code
-    await db.addConfigEditionLog(guildId, res.locals.user.user_id, "leaderboard_put", null);
+    await db.addConfigEditionLog(guildId, res.locals.user.user_id, EditionLogType.LEADERBOARD_PUT, null);
     console.log(`Leaderboard for guild ${guildId} has been edited by ${res.locals.user.user_id}`);
     res.sendStatus(204);
 }
@@ -508,7 +510,7 @@ export async function putRoleRewards(req: Request, res: Response) {
     if (rewardsToAdd.length > 0) {
         await db.setGuildRoleRewards(guildId, rewardsToAdd);
     }
-    await db.addConfigEditionLog(guildId, res.locals.user.user_id, "role_rewards_put", { newRewards: parsedData });
+    await db.addConfigEditionLog(guildId, res.locals.user.user_id, EditionLogType.ROLE_REWARDS_PUT, { newRewards: parsedData });
     console.log(`Role-rewards for guild ${guildId} has been edited by ${res.locals.user.user_id}`);
     const newRewards = await db.getGuildRoleRewards(guildId);
     res.send(newRewards);
@@ -559,10 +561,10 @@ export async function editGuildConfig(req: Request, res: Response) {
         const rawValue = await configManager.convertFromType(optionName, value);
         if (rawValue === null) {
             await db.resetGuildConfigOptionValue(guildId, optionName);
-            await db.addConfigEditionLog(guildId, res.locals.user.user_id, "sconfig_option_reset", { option: optionName });
+            await db.addConfigEditionLog(guildId, res.locals.user.user_id, EditionLogType.SCONFIG_OPTION_RESET, { option: optionName });
         } else {
             await db.setGuildConfigOptionValue(guildId, optionName, rawValue);
-            await db.addConfigEditionLog(guildId, res.locals.user.user_id, "sconfig_option_set", { option: optionName, value: rawValue });
+            await db.addConfigEditionLog(guildId, res.locals.user.user_id, EditionLogType.SCONFIG_OPTION_SET, { option: optionName, value: rawValue });
         }
     }
     // send updated config
@@ -589,8 +591,21 @@ export async function getGuildRssFeeds(req: Request, res: Response) {
     res.json(rssFeeds);
 }
 
+async function registerRssFeedsEdition(guildId: bigint, userId: bigint, eventType: EditionLogType.RSS_ADDED | EditionLogType.RSS_EDITED | EditionLogType.RSS_DELETED, feeds: (DBRssFeed & {displayName?: string})[]) {
+    if (!feeds.length) return;
+    const feedIdsAndNames = feeds.map((feed) => ({
+        id: feed.id,
+        channelId: feed.channelId,
+        link: feed.link,
+        type: feed.type,
+        displayName: feed.displayName,
+    }));
+    await db.addConfigEditionLog(guildId, userId, eventType, { feeds: feedIdsAndNames });
+}
+
 export async function toggleRssFeed(req: Request, res: Response) {
     let guildId, feedId;
+    // check guild ID validity
     try {
         guildId = BigInt(req.params.guildId);
     } catch (e) {
@@ -598,6 +613,13 @@ export async function toggleRssFeed(req: Request, res: Response) {
         res.status(400).send(res._err);
         return;
     }
+    // check user ID validity
+    if (res.locals.user === undefined) {
+        res._err = "Invalid token";
+        res.status(401).send(res._err);
+        return;
+    }
+    // check feed ID type validity
     try {
         feedId = BigInt(req.params.feedId);
     } catch (e) {
@@ -605,6 +627,7 @@ export async function toggleRssFeed(req: Request, res: Response) {
         res.status(400).send(res._err);
         return;
     }
+    // check if feed actually exists
     if (!await db.checkGuildRssFeedId(guildId, feedId)) {
         res._err = "Invalid feed ID";
         res.status(400).send(res._err);
@@ -618,16 +641,25 @@ export async function toggleRssFeed(req: Request, res: Response) {
         return;
     }
     const displayName = await rssExternalApisManager.getRssFeedDisplayName(updatedFeed);
-    res.json({ ...updatedFeed, displayName });
+    const updatedFeedWithDisplayName = { ...updatedFeed, displayName };
+    await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_EDITED, [updatedFeedWithDisplayName]);
+    res.json(updatedFeedWithDisplayName);
 }
 
 export async function editRssFeeds(req: Request, res: Response) {
+    // check guild ID validity
     let guildId;
     try {
         guildId = BigInt(req.params.guildId);
     } catch (e) {
         res._err = "Invalid guild ID";
         res.status(400).send(res._err);
+        return;
+    }
+    // check user ID validity
+    if (res.locals.user === undefined) {
+        res._err = "Invalid token";
+        res.status(401).send(res._err);
         return;
     }
     // check data validity
@@ -667,5 +699,18 @@ export async function editRssFeeds(req: Request, res: Response) {
             "displayName": displayName,
         };
     }));
+    // add edition logs
+    if (data.add) {
+        const addedFeeds = data.add.map((feed) => updatedFeedList.find((f) => f.link === feed.link && f.channelId.toString() === feed.channelId)).filter(feed => !!feed);
+        await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_ADDED, addedFeeds);
+    }
+    if (data.edit) {
+        const editedFeeds = data.edit.map((feed) => updatedFeedList.find((f) => f.id.toString() === feed.id)).filter(feed => !!feed);
+        await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_ADDED, editedFeeds);
+    }
+    if (data.remove) {
+        const removedFeeds = data.remove.map((feedId) => updatedFeedList.find((f) => f.id.toString() === feedId)).filter(feed => !!feed);
+        await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_ADDED, removedFeeds);
+    }
     res.json(updatedFeedList);
 }

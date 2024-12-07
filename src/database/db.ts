@@ -1,6 +1,7 @@
 import { createPool, Pool, PoolConfig, Types } from "mariadb";
 
 import { TokenInformation } from "./models/auth";
+import { EditionLogType } from "./models/misc-db-types";
 import { DBRssFeed, RawRssFeed, rawToDBRssFeed, RssFeedForCreation, RssFeedForEdition } from "./models/rss";
 import { DBRawUserData } from "./models/users";
 import { DBRoleReward, LeaderboardPlayer } from "./models/xp";
@@ -75,7 +76,7 @@ export default class Database {
         await this.axobotPool.query("DELETE FROM `serverconfig` WHERE `guild_id` = ? AND `beta` = ?", [guildId, BETA]);
     }
 
-    public async addConfigEditionLog(guildId: bigint, userId: bigint, eventType: "sconfig_option_set" | "sconfig_option_reset" | "sconfig_reset_all" | "leaderboard_put" | "role_rewards_put", data: Record<string, unknown> | null) {
+    public async addConfigEditionLog(guildId: bigint, userId: bigint, eventType: EditionLogType, data: Record<string, unknown> | null) {
         await this.axobotPool.query("INSERT INTO `edition_logs` (`guild_id`, `user_id`, `type`, `data`, `origin`, `beta`) VALUES (?, ?, ?, ?, 'website', ?)", [guildId, userId, eventType, JSON.stringify(data), BETA]);
     }
 
