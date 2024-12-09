@@ -667,11 +667,11 @@ export async function editRssFeeds(req: Request, res: Response) {
     }
     if (data.edit) {
         const editedFeeds = data.edit.map((feed) => updatedFeedList.find((f) => f.id.toString() === feed.id)).filter(feed => !!feed);
-        await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_ADDED, editedFeeds);
+        await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_EDITED, editedFeeds);
     }
     if (data.remove) {
         const removedFeeds = data.remove.map((feedId) => currentFeeds.find((f) => f.id.toString() === feedId)).filter(feed => !!feed);
-        await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_ADDED, removedFeeds);
+        await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_DELETED, removedFeeds);
     }
     res.json(updatedFeedList);
 }
