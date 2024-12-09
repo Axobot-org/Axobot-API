@@ -194,7 +194,7 @@ export default class Database {
     }
 
     public async editRssFeed(guildId: bigint, feed: RssFeedForEdition) {
-        await this.axobotPool.query("UPDATE `" + RSS_TABLE + "` SET `channel` = ?, `structure` = ?, `roles` = ?, `use_embed` = ?, `embed` = ?, `silent_mention` = ? WHERE `guild` = ? AND `ID` = ?", [feed.channelId, feed.structure, feed.roles.join(";"), feed.useEmbed, JSON.stringify(feed.embed), feed.silentMention, guildId, feed.id]);
+        await this.axobotPool.query("UPDATE `" + RSS_TABLE + "` SET `channel` = ?, `structure` = ?, `roles` = ?, `use_embed` = ?, `embed` = ?, `silent_mention` = ?, `enabled` = ? WHERE `guild` = ? AND `ID` = ?", [feed.channelId, feed.structure, feed.roles.join(";"), feed.useEmbed, JSON.stringify(feed.embed), feed.silentMention, feed.enabled, guildId, feed.id]);
     }
 
     public async deleteRssFeed(guildId: bigint, feedId: bigint) {
