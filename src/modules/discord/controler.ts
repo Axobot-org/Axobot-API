@@ -481,7 +481,7 @@ export async function putRoleRewards(req: Request, res: Response) {
     }
     // check data validity
     const data = req.body;
-    if (!is<RoleRewardsPUTData[]>(data)) {
+    if (!Array.isArray(data) || !is<RoleRewardsPUTData[]>(data)) {
         res._err = "Invalid data";
         res.status(400).send(res._err);
         return;
