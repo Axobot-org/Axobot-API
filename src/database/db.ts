@@ -189,7 +189,6 @@ export default class Database {
     }
 
     public async addRssFeed(guildId: bigint, feed: RssFeedForCreation) {
-        console.debug(feed);
         await this.axobotPool.query("INSERT INTO `" + RSS_TABLE + "` (`guild`, `channel`, `type`, `link`, `structure`, `roles`, `use_embed`, `embed`, `silent_mention`, `enabled`) VALUES (?,?,?,?,?,?,?,?,?,?)", [guildId, feed.channelId, feed.type, feed.link, feed.structure, feed.roles.join(";"), feed.useEmbed, JSON.stringify(feed.embed), feed.silentMention, feed.enabled]);
     }
 
