@@ -211,7 +211,7 @@ export default class GuildConfigManager {
         return config;
     }
 
-    public async getGuildConfigOption(guildId: bigint, optionNames: string[]) {
+    public async getGuildConfigOptions(guildId: bigint, optionNames: string[]) {
         const setupOptions = await this.db.getFullGuildConfigOptions(guildId);
         const defaultConfig = GuildConfigManager.optionsList;
         const config: Record<string, unknown> = Object.create(null);

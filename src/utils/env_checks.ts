@@ -10,6 +10,7 @@ const requiredEnvVariables = [
     "DATABASE_PASSWORD",
     "JWT_SECRET_TOKEN",
     "CORS_ACCEPTED_DOMAINS",
+    "YOUTUBE_API_KEY",
 ];
 
 /**

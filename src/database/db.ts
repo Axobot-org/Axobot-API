@@ -1,10 +1,13 @@
 import { createPool, Pool, PoolConfig, Types } from "mariadb";
 
 import { TokenInformation } from "./models/auth";
+import { EditionLogType } from "./models/misc-db-types";
+import { DBRssFeed, RawRssFeed, rawToDBRssFeed, RssFeedForCreation, RssFeedForEdition } from "./models/rss";
 import { DBRawUserData } from "./models/users";
 import { DBRoleReward, LeaderboardPlayer } from "./models/xp";
 
 const BETA = process.env.DISCORD_ENTITY_ID === "1";
+const RSS_TABLE = BETA ? "rss_feed_beta" : "rss_feed";
 
 const DB_CONFIG: PoolConfig = {
     host: process.env.DATABASE_HOST,
@@ -73,7 +76,7 @@ export default class Database {
         await this.axobotPool.query("DELETE FROM `serverconfig` WHERE `guild_id` = ? AND `beta` = ?", [guildId, BETA]);
     }
 
-    public async addConfigEditionLog(guildId: bigint, userId: bigint, eventType: "sconfig_option_set" | "sconfig_option_reset" | "sconfig_reset_all" | "leaderboard_put" | "role_rewards_put", data: Record<string, unknown> | null) {
+    public async addConfigEditionLog(guildId: bigint, userId: bigint, eventType: EditionLogType, data: Record<string, unknown> | null) {
         await this.axobotPool.query("INSERT INTO `edition_logs` (`guild_id`, `user_id`, `type`, `data`, `origin`, `beta`) VALUES (?, ?, ?, ?, 'website', ?)", [guildId, userId, eventType, JSON.stringify(data), BETA]);
     }
 
@@ -164,6 +167,37 @@ export default class Database {
             "INSERT INTO `roles_rewards` (`guild`, `role`, `level`) VALUES (?, ?, ?)",
             data.map((row) => [guildId, row.roleId, row.level]),
         );
+    }
+
+    public async getGuildRssFeeds(guildId: bigint): Promise<DBRssFeed[]> {
+        const result = await this.axobotPool.query<RawRssFeed[]>("SELECT `ID`, `channel`, `type`, `link`, `date`, `structure`, `roles`, `use_embed`, `embed`, `silent_mention`, `recent_errors`, `enabled`, `added_at` FROM `" + RSS_TABLE + "` WHERE `guild` = ?", [guildId]);
+        return result.map(rawToDBRssFeed);
+    }
+
+    public async getGuildRssFeed(guildId: bigint, feedId: bigint): Promise<DBRssFeed | null> {
+        const result = await this.axobotPool.query<RawRssFeed[]>("SELECT `ID`, `channel`, `type`, `link`, `date`, `structure`, `roles`, `use_embed`, `embed`, `silent_mention`, `recent_errors`, `enabled`, `added_at` FROM `" + RSS_TABLE + "` WHERE `guild` = ? AND `ID` = ?", [guildId, feedId]);
+        return result[0] ? rawToDBRssFeed(result[0]) : null;
+    }
+
+    public async checkGuildRssFeedId(guildId: bigint, feedId: bigint): Promise<boolean> {
+        const result = await this.axobotPool.query("SELECT COUNT(*) AS `count` FROM `" + RSS_TABLE + "` WHERE `guild` = ? AND `ID` = ?", [guildId, feedId]);
+        return result[0].count > 0;
+    }
+
+    public async toggleRssFeed(guildId: bigint, feedId: bigint) {
+        await this.axobotPool.query("UPDATE `" + RSS_TABLE + "` SET `enabled` = NOT `enabled` WHERE `guild` = ? AND `ID` = ?", [guildId, feedId]);
+    }
+
+    public async addRssFeed(guildId: bigint, feed: RssFeedForCreation) {
+        await this.axobotPool.query("INSERT INTO `" + RSS_TABLE + "` (`guild`, `channel`, `type`, `link`, `structure`, `roles`, `use_embed`, `embed`, `silent_mention`, `enabled`) VALUES (?,?,?,?,?,?,?,?,?,?)", [guildId, feed.channelId, feed.type, feed.link, feed.structure, feed.roles.join(";"), feed.useEmbed, JSON.stringify(feed.embed), feed.silentMention, feed.enabled]);
+    }
+
+    public async editRssFeed(guildId: bigint, feed: RssFeedForEdition) {
+        await this.axobotPool.query("UPDATE `" + RSS_TABLE + "` SET `channel` = ?, `structure` = ?, `roles` = ?, `use_embed` = ?, `embed` = ?, `silent_mention` = ?, `enabled` = ? WHERE `guild` = ? AND `ID` = ?", [feed.channelId, feed.structure, feed.roles.join(";"), feed.useEmbed, JSON.stringify(feed.embed), feed.silentMention, feed.enabled, guildId, feed.id]);
+    }
+
+    public async deleteRssFeed(guildId: bigint, feedId: bigint) {
+        await this.axobotPool.query("DELETE FROM `" + RSS_TABLE + "` WHERE `guild` = ? AND `ID` = ?", [guildId, feedId]);
     }
 
 

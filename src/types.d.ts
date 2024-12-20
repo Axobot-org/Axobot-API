@@ -29,6 +29,7 @@ declare global {
             CORS_ACCEPTED_DOMAINS: string;
             JWT_TOKEN_EXPIRATION_DAYS?: string;
             PROXY_LEVEL?: string;
+            YOUTUBE_API_KEY: string;
         }
     }
 }

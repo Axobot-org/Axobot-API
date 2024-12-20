@@ -7,15 +7,19 @@ import DiscordClient from "../../bot/client";
 import Database from "../../database/db";
 import GuildConfigManager from "../../database/guild-config/guild-config-manager";
 import { GuildConfigOptionCategory, GuildConfigOptionCategoryNames } from "../../database/guild-config/guild-config-types";
+import { EditionLogType } from "../../database/models/misc-db-types";
+import { DBRssFeed } from "../../database/models/rss";
 import { LeaderboardPlayer } from "../../database/models/xp";
 import setCacheControl from "../../utils/cache_control";
-import { LeaderboardImportUserData, RoleRewardsPUTData } from "./types/guilds";
+import { LeaderboardImportUserData, RoleRewardsPUTData, RssFeedPUTData } from "./types/guilds";
 import { checkUserAuthentificationAndPermission, getGuildInfo, transformLeaderboard } from "./utils/leaderboard";
+import RssExternalApisManager from "./utils/rss";
 
 
 const db = Database.getInstance();
 const discordClient = DiscordClient.getInstance();
 const configManager = GuildConfigManager.getInstance();
+const rssExternalApisManager = RssExternalApisManager.getInstance();
 
 function parseCategoriesParameter(category: unknown) {
     if (category === "all") {
@@ -450,7 +454,7 @@ export async function putGuildLeaderboard(req: Request, res: Response, next: Nex
     const leaderboardData = data.map((entry) => ({ userID: BigInt(entry.user_id), xp: entry.xp }));
     await db.setGuildLeaderboard(guildId, leaderboardData);
     // send success code
-    await db.addConfigEditionLog(guildId, res.locals.user.user_id, "leaderboard_put", null);
+    await db.addConfigEditionLog(guildId, res.locals.user.user_id, EditionLogType.LEADERBOARD_PUT, null);
     console.log(`Leaderboard for guild ${guildId} has been edited by ${res.locals.user.user_id}`);
     res.sendStatus(204);
 }
@@ -477,12 +481,19 @@ export async function putRoleRewards(req: Request, res: Response) {
     }
     // check data validity
     const data = req.body;
-    if (!is<RoleRewardsPUTData[]>(data)) {
+    if (!Array.isArray(data) || !is<RoleRewardsPUTData[]>(data)) {
         res._err = "Invalid data";
         res.status(400).send(res._err);
         return;
     }
     const parsedData = data.map(row => ({ ...row, roleId: BigInt(row.roleId), level: BigInt(row.level) }));
+    // check for max rewards limit
+    const rewardsLimit = await configManager.getGuildConfigOptionValue(guildId, "rr_max_number") as number;
+    if (data.length > rewardsLimit) {
+        res._err = `Too many role-rewards, max is ${rewardsLimit}`;
+        res.status(400).send(res._err);
+        return;
+    }
     // remove previous rewards
     const previousRewards = await db.getGuildRoleRewards(guildId);
     const rewardsToRemove = previousRewards.filter(
@@ -499,7 +510,7 @@ export async function putRoleRewards(req: Request, res: Response) {
     if (rewardsToAdd.length > 0) {
         await db.setGuildRoleRewards(guildId, rewardsToAdd);
     }
-    await db.addConfigEditionLog(guildId, res.locals.user.user_id, "role_rewards_put", { newRewards: parsedData });
+    await db.addConfigEditionLog(guildId, res.locals.user.user_id, EditionLogType.ROLE_REWARDS_PUT, { newRewards: parsedData });
     console.log(`Role-rewards for guild ${guildId} has been edited by ${res.locals.user.user_id}`);
     const newRewards = await db.getGuildRoleRewards(guildId);
     res.send(newRewards);
@@ -550,13 +561,117 @@ export async function editGuildConfig(req: Request, res: Response) {
         const rawValue = await configManager.convertFromType(optionName, value);
         if (rawValue === null) {
             await db.resetGuildConfigOptionValue(guildId, optionName);
-            await db.addConfigEditionLog(guildId, res.locals.user.user_id, "sconfig_option_reset", { option: optionName });
+            await db.addConfigEditionLog(guildId, res.locals.user.user_id, EditionLogType.SCONFIG_OPTION_RESET, { option: optionName });
         } else {
             await db.setGuildConfigOptionValue(guildId, optionName, rawValue);
-            await db.addConfigEditionLog(guildId, res.locals.user.user_id, "sconfig_option_set", { option: optionName, value: rawValue });
+            await db.addConfigEditionLog(guildId, res.locals.user.user_id, EditionLogType.SCONFIG_OPTION_SET, { option: optionName, value: rawValue });
         }
     }
     // send updated config
-    const updatedConfig = await configManager.getGuildConfigOption(guildId, Object.keys(config));
+    const updatedConfig = await configManager.getGuildConfigOptions(guildId, Object.keys(config));
     res.send(updatedConfig);
+}
+
+export async function getGuildRssFeeds(req: Request, res: Response) {
+    let guildId;
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
+        return;
+    }
+    const rssFeeds = await Promise.all((await db.getGuildRssFeeds(guildId)).map(async (feed) => {
+        const displayName = await rssExternalApisManager.getRssFeedDisplayName(feed);
+        return {
+            ...feed,
+            "displayName": displayName,
+        };
+    }));
+    res.json(rssFeeds);
+}
+
+async function registerRssFeedsEdition(guildId: bigint, userId: bigint, eventType: EditionLogType.RSS_ADDED | EditionLogType.RSS_EDITED | EditionLogType.RSS_DELETED, feeds: (DBRssFeed & {displayName?: string})[]) {
+    if (!feeds.length) return;
+    const feedIdsAndNames = feeds.map((feed) => ({
+        id: feed.id,
+        channelId: feed.channelId,
+        link: feed.link,
+        type: feed.type,
+        displayName: feed.displayName,
+    }));
+    await db.addConfigEditionLog(guildId, userId, eventType, { feeds: feedIdsAndNames });
+}
+
+export async function editRssFeeds(req: Request, res: Response) {
+    // check guild ID validity
+    let guildId;
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
+        return;
+    }
+    // check user ID validity
+    if (res.locals.user === undefined) {
+        res._err = "Invalid token";
+        res.status(401).send(res._err);
+        return;
+    }
+    // check data validity
+    const data = req.body;
+    if (!is<RssFeedPUTData>(data) || (!data.add && !data.edit && !data.remove)) {
+        res._err = "Invalid data";
+        res.status(400).send(res._err);
+        return;
+    }
+    // check for max feeds limit
+    const feedsLimit = await configManager.getGuildConfigOptionValue(guildId, "rss_max_number") as number;
+    const currentFeeds = await db.getGuildRssFeeds(guildId);
+    const newFeedsCount = data.add?.length ?? 0;
+    const removedFeedsCount = data.remove?.length ?? 0;
+    if (currentFeeds.length + newFeedsCount - removedFeedsCount > feedsLimit) {
+        res._err = `Too many feeds, max is ${feedsLimit}`;
+        res.status(400).send(res._err);
+        return;
+    }
+    // add missing feeds
+    for (const feed of data.add ?? []) {
+        await db.addRssFeed(guildId, feed);
+    }
+    // edit existing feeds
+    for (const feed of data.edit ?? []) {
+        // prevent enabling twitter feeds
+        if (feed.enabled && currentFeeds.find((f) => f.id.toString() === feed.id)?.type === "tw") {
+            feed.enabled = false;
+        }
+        await db.editRssFeed(guildId, feed);
+    }
+    // remove feeds to delete
+    for (const feedId of data.remove ?? []) {
+        await db.deleteRssFeed(guildId, BigInt(feedId));
+    }
+    // return edited list
+    const updatedFeedList = await Promise.all((await db.getGuildRssFeeds(guildId)).map(async (feed) => {
+        const displayName = await rssExternalApisManager.getRssFeedDisplayName(feed);
+        return {
+            ...feed,
+            "displayName": displayName,
+        };
+    }));
+    // add edition logs
+    if (data.add) {
+        const addedFeeds = data.add.map((feed) => updatedFeedList.find((f) => f.link === feed.link && f.channelId.toString() === feed.channelId)).filter(feed => !!feed);
+        await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_ADDED, addedFeeds);
+    }
+    if (data.edit) {
+        const editedFeeds = data.edit.map((feed) => updatedFeedList.find((f) => f.id.toString() === feed.id)).filter(feed => !!feed);
+        await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_EDITED, editedFeeds);
+    }
+    if (data.remove) {
+        const removedFeeds = data.remove.map((feedId) => currentFeeds.find((f) => f.id.toString() === feedId)).filter(feed => !!feed);
+        await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_DELETED, removedFeeds);
+    }
+    res.json(updatedFeedList);
 }
