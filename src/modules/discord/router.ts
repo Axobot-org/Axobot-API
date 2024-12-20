@@ -23,7 +23,7 @@ router.get("/guild/:guildId/leaderboard", getLeaderboardRateLimiter, getGuildLea
 
 router.get("/guild/:guildId/leaderboard.json", getLeaderboardRateLimiter, getGuildLeaderboardAsJson);
 
-router.get("/guild/:guildId/rss-feeds", getGuildConfigRateLimiter, tokenCheckMiddleware, isDiscordServerMember, getGuildRssFeeds);
+router.get("/guild/:guildId/rss-feeds", getGuildConfigRateLimiter, tokenCheckMiddleware, isDiscordServerAdmin, getGuildRssFeeds);
 
 router.get("/guild/:guildId/roles", getGuildChannelAndRolesRateLimiter, tokenCheckMiddleware, isDiscordServerMember, getGuildRoles);
 
