@@ -1,17 +1,27 @@
 import { createCache, MemoryCache, memoryStore } from "cache-manager";
 
-import { DBRssFeed } from "../../../database/models/rss";
+import { DBRssFeed, VALID_RSS_FEED_TYPES } from "../database/models/rss";
+import { ParsedEntry } from "./modules/parsed-entry";
+import WebRss from "./modules/web-rss";
+import YouTubeRss from "./modules/youtube-rss";
 
 export default class RssExternalApisManager {
     private static instance: RssExternalApisManager;
 
     private displayNameCache: MemoryCache;
 
+    private youtubeRss: YouTubeRss;
+
+    private webRss: WebRss;
+
+
     private constructor() {
         this.displayNameCache = createCache(memoryStore({
             max: 100,
             ttl: 12 * 60 * 60 * 1000, // 12 hour
         }));
+        this.youtubeRss = new YouTubeRss();
+        this.webRss = new WebRss();
     }
 
     public static getInstance(): RssExternalApisManager {
@@ -21,7 +31,7 @@ export default class RssExternalApisManager {
         return RssExternalApisManager.instance;
     }
 
-    async getRssFeedDisplayName(feed: DBRssFeed): Promise<string | undefined> {
+    async getRssFeedDisplayName(feed: Pick<DBRssFeed, "type" | "link">): Promise<string | undefined> {
         const cacheKey = `${feed.type}:${feed.link}`;
         const cached = await this.displayNameCache.get<string>(cacheKey);
         if (cached) {
@@ -30,7 +40,7 @@ export default class RssExternalApisManager {
         let displayName: string | undefined;
         switch (feed.type) {
         case "yt":
-            displayName = await this.getYouTubeDisplayName(feed.link);
+            displayName = await this.youtubeRss.getDisplayName(feed.link);
             break;
         case "mc":
             displayName = this.getMinecraftDisplayName(feed.link);
@@ -44,32 +54,15 @@ export default class RssExternalApisManager {
         return displayName;
     }
 
-    private async getYouTubeDisplayName(channelId: string): Promise<string | undefined> {
-        if (channelId.length < 15 || channelId.length > 25) {
-            console.warn(`Invalid YouTube channel ID: ${channelId}`);
+    async testRssFeed(type: VALID_RSS_FEED_TYPES, url: string): Promise<ParsedEntry | undefined> {
+        switch (type) {
+        case "yt":
+            return this.youtubeRss.getLastPost(url);
+        case "web":
+            return this.webRss.getLastPost(url);
+        default:
             return undefined;
         }
-        console.debug(`Fetching YouTube channel name for ${channelId}`);
-        const result = await fetch(
-            "https://www.googleapis.com/youtube/v3/channels?" + new URLSearchParams({
-                key: process.env.YOUTUBE_API_KEY,
-                id: channelId,
-                part: "snippet",
-                maxResults: "1",
-                fields: "items(snippet(title))",
-            }).toString()
-        );
-        if (!result.ok) {
-            console.warn(`Failed to fetch YouTube channel name for ${channelId}: ${result.status}`);
-            console.debug(await result.text());
-            return undefined;
-        }
-        const json = await result.json();
-        if (!json.items || json.items.length === 0) {
-            console.warn(`No YouTube channel found for ${channelId}`);
-            return undefined;
-        }
-        return json.items[0].snippet.title;
     }
 
     private getMinecraftDisplayName(link: string): string {

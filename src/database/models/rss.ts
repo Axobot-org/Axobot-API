@@ -17,6 +17,7 @@ export interface RawRssFeed {
 }
 
 export const VALID_RSS_FEED_TYPES = ["bluesky", "deviantart", "twitch", "web", "yt"] as const;
+export type VALID_RSS_FEED_TYPES = (typeof VALID_RSS_FEED_TYPES)[number];
 
 export type RssFeedForCreation = Exclude<RssFeedPUTData["add"], undefined>[number];
 

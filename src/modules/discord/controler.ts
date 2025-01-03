@@ -10,10 +10,10 @@ import { GuildConfigOptionCategory, GuildConfigOptionCategoryNames } from "../..
 import { EditionLogType } from "../../database/models/misc-db-types";
 import { DBRssFeed } from "../../database/models/rss";
 import { LeaderboardPlayer } from "../../database/models/xp";
+import RssExternalApisManager from "../../rss/rss-external-apis-manager";
 import setCacheControl from "../../utils/cache_control";
 import { LeaderboardImportUserData, RoleRewardsPUTData, RssFeedPUTData } from "./types/guilds";
 import { checkUserAuthentificationAndPermission, getGuildInfo, transformLeaderboard } from "./utils/leaderboard";
-import RssExternalApisManager from "./utils/rss";
 
 
 const db = Database.getInstance();

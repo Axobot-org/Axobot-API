@@ -61,7 +61,7 @@ interface __RssFeedPUT_Common {
 interface RssFeedPUTData {
     add?: (__RssFeedPUT_Common & {
         link: string;
-        type: Exclude<typeof VALID_RSS_FEED_TYPES[number], "tw">;
+        type: Exclude<VALID_RSS_FEED_TYPES, "tw">;
     })[];
     edit?: (__RssFeedPUT_Common & {
         id: string;
