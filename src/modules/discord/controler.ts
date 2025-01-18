@@ -603,6 +603,50 @@ async function registerRssFeedsEdition(guildId: bigint, userId: bigint, eventTyp
     await db.addConfigEditionLog(guildId, userId, eventType, { feeds: feedIdsAndNames });
 }
 
+export async function toggleRssFeed(req: Request, res: Response) {
+    let guildId, feedId;
+    // check guild ID validity
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
+        return;
+    }
+    // check user ID validity
+    if (res.locals.user === undefined) {
+        res._err = "Invalid token";
+        res.status(401).send(res._err);
+        return;
+    }
+    // check feed ID type validity
+    try {
+        feedId = BigInt(req.params.feedId);
+    } catch (e) {
+        res._err = "Invalid feed ID";
+        res.status(400).send(res._err);
+        return;
+    }
+    // check if feed actually exists
+    const currentFeed = await db.getGuildRssFeed(guildId, feedId);
+    if (!currentFeed || currentFeed.type === "tw") {
+        res._err = "Invalid feed ID";
+        res.status(400).send(res._err);
+        return;
+    }
+    await db.toggleRssFeed(guildId, feedId);
+    const updatedFeed = await db.getGuildRssFeed(guildId, feedId);
+    if (updatedFeed === null) {
+        res._err = "Missing feed";
+        res.status(500).send(res._err);
+        return;
+    }
+    const displayName = await rssExternalApisManager.getRssFeedDisplayName(updatedFeed);
+    const updatedFeedWithDisplayName = { ...updatedFeed, displayName };
+    await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_EDITED, [updatedFeedWithDisplayName]);
+    res.json(updatedFeedWithDisplayName);
+}
+
 export async function editRssFeeds(req: Request, res: Response) {
     // check guild ID validity
     let guildId;
