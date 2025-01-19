@@ -647,9 +647,9 @@ export async function toggleRssFeed(req: Request, res: Response) {
     res.json(updatedFeedWithDisplayName);
 }
 
-export async function editRssFeeds(req: Request, res: Response) {
+export async function editRssFeed(req: Request, res: Response) {
+    let guildId, feedId;
     // check guild ID validity
-    let guildId;
     try {
         guildId = BigInt(req.params.guildId);
     } catch (e) {
@@ -665,57 +665,74 @@ export async function editRssFeeds(req: Request, res: Response) {
     }
     // check data validity
     const data = req.body;
-    if (!is<RssFeedPUTData>(data) || (!data.add && !data.edit && !data.remove)) {
+    if (!is<RssFeedPUTData>(data)) {
         res._err = "Invalid data";
         res.status(400).send(res._err);
         return;
     }
-    // check for max feeds limit
-    const feedsLimit = await configManager.getGuildConfigOptionValue(guildId, "rss_max_number") as number;
-    const currentFeeds = await db.getGuildRssFeeds(guildId);
-    const newFeedsCount = data.add?.length ?? 0;
-    const removedFeedsCount = data.remove?.length ?? 0;
-    if (currentFeeds.length + newFeedsCount - removedFeedsCount > feedsLimit) {
-        res._err = `Too many feeds, max is ${feedsLimit}`;
+    // check feed ID type validity
+    try {
+        feedId = BigInt(req.params.feedId);
+    } catch (e) {
+        res._err = "Invalid feed ID";
         res.status(400).send(res._err);
         return;
     }
-    // add missing feeds
-    for (const feed of data.add ?? []) {
-        await db.addRssFeed(guildId, feed);
+    // check if feed actually exists
+    const currentFeed = await db.getGuildRssFeed(guildId, feedId);
+    if (!currentFeed) {
+        res._err = "Invalid feed ID";
+        res.status(400).send(res._err);
+        return;
     }
-    // edit existing feeds
-    for (const feed of data.edit ?? []) {
-        // prevent enabling twitter feeds
-        if (feed.enabled && currentFeeds.find((f) => f.id.toString() === feed.id)?.type === "tw") {
-            feed.enabled = false;
-        }
-        await db.editRssFeed(guildId, feed);
+    // prevent enabling twitter feeds
+    if (data.enabled && currentFeed.type === "tw") {
+        data.enabled = false;
     }
-    // remove feeds to delete
-    for (const feedId of data.remove ?? []) {
-        await db.deleteRssFeed(guildId, BigInt(feedId));
+    // edit feed
+    await db.editRssFeed(guildId, data);
+    const updatedFeed = await db.getGuildRssFeed(guildId, feedId);
+    if (!updatedFeed) {
+        res._err = "Missing feed";
+        res.status(500).send(res._err);
+        return;
     }
-    // return edited list
-    const updatedFeedList = await Promise.all((await db.getGuildRssFeeds(guildId)).map(async (feed) => {
-        const displayName = await rssExternalApisManager.getRssFeedDisplayName(feed);
-        return {
-            ...feed,
-            "displayName": displayName,
-        };
-    }));
-    // add edition logs
-    if (data.add) {
-        const addedFeeds = data.add.map((feed) => updatedFeedList.find((f) => f.link === feed.link && f.channelId.toString() === feed.channelId)).filter(feed => !!feed);
-        await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_ADDED, addedFeeds);
+    await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_EDITED, [updatedFeed]);
+    res.json(updatedFeed);
+}
+
+export async function deleteRssFeed(req: Request, res: Response) {
+    let guildId, feedId;
+    // check guild ID validity
+    try {
+        guildId = BigInt(req.params.guildId);
+    } catch (e) {
+        res._err = "Invalid guild ID";
+        res.status(400).send(res._err);
+        return;
     }
-    if (data.edit) {
-        const editedFeeds = data.edit.map((feed) => updatedFeedList.find((f) => f.id.toString() === feed.id)).filter(feed => !!feed);
-        await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_EDITED, editedFeeds);
+    // check user ID validity
+    if (res.locals.user === undefined) {
+        res._err = "Invalid token";
+        res.status(401).send(res._err);
+        return;
     }
-    if (data.remove) {
-        const removedFeeds = data.remove.map((feedId) => currentFeeds.find((f) => f.id.toString() === feedId)).filter(feed => !!feed);
-        await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_DELETED, removedFeeds);
+    // check feed ID type validity
+    try {
+        feedId = BigInt(req.params.feedId);
+    } catch (e) {
+        res._err = "Invalid feed ID";
+        res.status(400).send(res._err);
+        return;
     }
-    res.json(updatedFeedList);
+    // check if feed actually exists
+    const currentFeed = await db.getGuildRssFeed(guildId, feedId);
+    if (!currentFeed || currentFeed.type === "tw") {
+        res._err = "Invalid feed ID";
+        res.status(400).send(res._err);
+        return;
+    }
+    await db.deleteRssFeed(guildId, feedId);
+    await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_DELETED, [currentFeed]);
+    res.sendStatus(204);
 }

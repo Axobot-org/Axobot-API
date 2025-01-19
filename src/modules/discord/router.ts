@@ -1,7 +1,7 @@
 import express from "express";
 
 import { tokenCheckMiddleware } from "../auth/tokens";
-import { editGuildConfig, editRssFeeds, getBasicGuildInfo, getBotChangelog, getBotInfo, getDefaultGuildConfigOptions, getGlobalLeaderboard, getGuildChannels, getGuildConfig, getGuildConfigEditionLogs, getGuildLeaderboard, getGuildLeaderboardAsJson, getGuildRoleRewards, getGuildRoles, getGuildRssFeeds, getUserGuilds, putGuildLeaderboard, putRoleRewards, toggleRssFeed } from "./controler";
+import { deleteRssFeed, editGuildConfig, editRssFeed, getBasicGuildInfo, getBotChangelog, getBotInfo, getDefaultGuildConfigOptions, getGlobalLeaderboard, getGuildChannels, getGuildConfig, getGuildConfigEditionLogs, getGuildLeaderboard, getGuildLeaderboardAsJson, getGuildRoleRewards, getGuildRoles, getGuildRssFeeds, getUserGuilds, putGuildLeaderboard, putRoleRewards, toggleRssFeed } from "./controler";
 import { isDiscordServerAdmin, isDiscordServerMember } from "./middlewares";
 import { editLeaderboardRateLimiter, editRoleRewardsRateLimiter, editRssFeedRateLimiter, getBotInfoRateLimiter, getDefaultGuildConfigRateLimiter, getGuildChannelAndRolesRateLimiter, getGuildConfigLogsRateLimiter, getGuildConfigRateLimiter, getGuildsListRateLimiter, getLeaderboardRateLimiter } from "./ratelimits";
 
@@ -44,6 +44,8 @@ router.patch("/guild/:guildId/config", getGuildConfigRateLimiter, tokenCheckMidd
 
 router.post("/guild/:guildId/rss-feeds/:feedId/toggle", editRssFeedRateLimiter, tokenCheckMiddleware, isDiscordServerAdmin, toggleRssFeed);
 
-router.patch("/guild/:guildId/rss-feeds", editRssFeedRateLimiter, tokenCheckMiddleware, isDiscordServerAdmin, editRssFeeds);
+router.put("/guild/:guildId/rss-feeds/:feedId", editRssFeedRateLimiter, tokenCheckMiddleware, isDiscordServerAdmin, editRssFeed);
+
+router.delete("/guild/:guildId/rss-feeds/:feedId", editRssFeedRateLimiter, tokenCheckMiddleware, isDiscordServerAdmin, deleteRssFeed);
 
 export default router;
