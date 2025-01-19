@@ -591,16 +591,15 @@ export async function getGuildRssFeeds(req: Request, res: Response) {
     res.json(rssFeeds);
 }
 
-async function registerRssFeedsEdition(guildId: bigint, userId: bigint, eventType: EditionLogType.RSS_ADDED | EditionLogType.RSS_EDITED | EditionLogType.RSS_DELETED, feeds: (DBRssFeed & {displayName?: string})[]) {
-    if (!feeds.length) return;
-    const feedIdsAndNames = feeds.map((feed) => ({
+async function registerRssFeedsEdition(guildId: bigint, userId: bigint, eventType: EditionLogType.RSS_ADDED | EditionLogType.RSS_EDITED | EditionLogType.RSS_DELETED, feed: (DBRssFeed & {displayName?: string})) {
+    const feedIdsAndName = {
         id: feed.id,
         channelId: feed.channelId,
         link: feed.link,
         type: feed.type,
         displayName: feed.displayName,
-    }));
-    await db.addConfigEditionLog(guildId, userId, eventType, { feeds: feedIdsAndNames });
+    };
+    await db.addConfigEditionLog(guildId, userId, eventType, { feed: feedIdsAndName });
 }
 
 export async function toggleRssFeed(req: Request, res: Response) {
@@ -643,7 +642,7 @@ export async function toggleRssFeed(req: Request, res: Response) {
     }
     const displayName = await rssExternalApisManager.getRssFeedDisplayName(updatedFeed);
     const updatedFeedWithDisplayName = { ...updatedFeed, displayName };
-    await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_EDITED, [updatedFeedWithDisplayName]);
+    await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_EDITED, updatedFeedWithDisplayName);
     res.json(updatedFeedWithDisplayName);
 }
 
@@ -697,7 +696,7 @@ export async function editRssFeed(req: Request, res: Response) {
         res.status(500).send(res._err);
         return;
     }
-    await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_EDITED, [updatedFeed]);
+    await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_EDITED, updatedFeed);
     res.json(updatedFeed);
 }
 
@@ -733,6 +732,6 @@ export async function deleteRssFeed(req: Request, res: Response) {
         return;
     }
     await db.deleteRssFeed(guildId, feedId);
-    await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_DELETED, [currentFeed]);
+    await registerRssFeedsEdition(guildId, res.locals.user.user_id, EditionLogType.RSS_DELETED, currentFeed);
     res.sendStatus(204);
 }
