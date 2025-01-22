@@ -49,8 +49,8 @@ export default class YouTubeRss {
         return json.items[0].snippet.title;
     }
 
-    async getLastPost(UrlOrhannelId: string): Promise<ParsedEntry | undefined> {
-        const channelId = await this.getChannelByAnyTerm(UrlOrhannelId);
+    async getLastPost(UrlOrChannelId: string): Promise<ParsedEntry | undefined> {
+        const channelId = await this.getChannelByAnyTerm(UrlOrChannelId);
         if (!channelId) {
             return undefined;
         }
@@ -63,8 +63,8 @@ export default class YouTubeRss {
     }
 
     private async getChannelByAnyTerm(term: string): Promise<string | undefined> {
-        if (term.length < 3) {
-            console.warn(`Invalid search term: ${term}`);
+        if (typeof term !== "string" || term.length < 3 || term.length > 100) {
+            console.warn("Invalid search term");
             return undefined;
         }
         const urlMatch = this.urlPattern.exec(term);
@@ -84,6 +84,9 @@ export default class YouTubeRss {
     }
 
     private async isValidChannelId(channelId: string) {
+        if (!/^[a-zA-Z\d]{10,25}$/.test(channelId)) {
+            return false;
+        }
         const url = `https://www.youtube.com/channel/${channelId}`;
         const result = await fetch(url);
         return result.ok;
@@ -100,13 +103,14 @@ export default class YouTubeRss {
             }).toString()
         );
         if (!result.ok) {
-            console.warn(`Failed to fetch YouTube channel name for ${term}: ${result.status}`);
+            console.warn(`Failed to fetch YouTube channel name: ${result.status}`);
             console.debug(await result.text());
             return undefined;
         }
         const json = await result.json();
         if (!is<{items: {id: string}[]}>(json)) {
-            console.warn(`Invalid YouTube API response for ${term}`);
+            const sanitizedTerm = term.replace(/\n|\r/g, "").slice(0, 100);
+            console.warn(`Invalid YouTube API response for ${sanitizedTerm}`);
             return undefined;
         }
         return json.items[0].id;
@@ -118,7 +122,8 @@ export default class YouTubeRss {
         try {
             feed = await this.parser.parseURL(url);
         } catch (err) {
-            console.warn(`Error while fetching RSS feed from ${url}: ${err}`);
+            const sanitizedUrl = url.replace(/\n|\r/g, "").slice(0, 100);
+            console.warn(`Error while fetching RSS feed from ${sanitizedUrl}: ${err}`);
             return null;
         }
         if (!feed || feed.items.length === 0) {

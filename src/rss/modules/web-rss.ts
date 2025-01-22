@@ -32,7 +32,8 @@ export default class WebRss {
         try {
             feed = await this.parser.parseURL(url);
         } catch (err) {
-            console.warn(`Error while fetching RSS feed from ${url}: ${err}`);
+            const sanitizedUrl = url.replace(/\n|\r/g, "").slice(0, 100);
+            console.warn(`Error while fetching RSS feed from ${sanitizedUrl}: ${err}`);
             return null;
         }
         if (!feed || feed.items.length === 0) {
