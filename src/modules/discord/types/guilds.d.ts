@@ -1,7 +1,5 @@
 import { GuildFeature, PermissionsBitField } from "discord.js";
 
-import { VALID_RSS_FEED_TYPES } from "../../../database/models/rss";
-
 interface LeaderboardGuildData {
     id: string;
     name: string;
@@ -58,13 +56,6 @@ interface __RssFeedPUT_Common {
     enabled: boolean;
 }
 
-interface RssFeedPUTData {
-    add?: (__RssFeedPUT_Common & {
-        link: string;
-        type: Exclude<typeof VALID_RSS_FEED_TYPES[number], "tw">;
-    })[];
-    edit?: (__RssFeedPUT_Common & {
-        id: string;
-    })[];
-    remove?: string[];
+interface RssFeedPUTData extends __RssFeedPUT_Common {
+    id: string;
 }

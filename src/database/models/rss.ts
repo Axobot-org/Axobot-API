@@ -1,5 +1,3 @@
-import { RssFeedPUTData } from "../../modules/discord/types/guilds";
-
 export interface RawRssFeed {
     ID: bigint;
     channel: bigint;
@@ -17,10 +15,46 @@ export interface RawRssFeed {
 }
 
 export const VALID_RSS_FEED_TYPES = ["bluesky", "deviantart", "twitch", "web", "yt"] as const;
+export type VALID_RSS_FEED_TYPES = (typeof VALID_RSS_FEED_TYPES)[number];
 
-export type RssFeedForCreation = Exclude<RssFeedPUTData["add"], undefined>[number];
+export interface RssFeedForCreation {
+    channelId: string;
+    type: VALID_RSS_FEED_TYPES;
+    link: string;
+    structure: string;
+    roles: string[];
+    useEmbed: boolean;
+    embed: {
+        authorText?: string;
+        title?: string;
+        footerText?: string;
+        color?: number;
+        showDateInFooter?: boolean;
+        enableLinkInTitle?: boolean;
+        imageLocation?: "thumbnail" | "banner" | "none";
+    };
+    silentMention: boolean;
+    enabled: boolean;
+}
 
-export type RssFeedForEdition = Exclude<RssFeedPUTData["edit"], undefined>[number];
+export interface RssFeedForEdition {
+    id: string;
+    channelId: string;
+    structure: string;
+    roles: string[];
+    useEmbed: boolean;
+    embed: {
+        authorText?: string;
+        title?: string;
+        footerText?: string;
+        color?: number;
+        showDateInFooter?: boolean;
+        enableLinkInTitle?: boolean;
+        imageLocation?: "thumbnail" | "banner" | "none";
+    };
+    silentMention: boolean;
+    enabled: boolean;
+}
 
 export interface DBRssFeed {
     id: bigint;

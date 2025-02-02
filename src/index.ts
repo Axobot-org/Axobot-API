@@ -12,6 +12,7 @@ import AuthRouter from "./modules/auth/router";
 import CrowdinRouter from "./modules/crowdin/router";
 import DiscordRouter from "./modules/discord/router";
 import DockerRouter from "./modules/docker/router";
+import RssRouter from "./modules/rss/router";
 import { formatDate } from "./utils/date_formatter";
 import { checkEnvironmentVariables } from "./utils/env_checks";
 
@@ -81,6 +82,7 @@ app.use("/auth", AuthRouter);
 app.use("/crowdin", CrowdinRouter);
 app.use("/discord", DiscordRouter);
 app.use("/docker", DockerRouter);
+app.use("/rss", RssRouter);
 
 // Middleware to return a clean error message when the body is not a valid JSON
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
