@@ -1,4 +1,4 @@
-import { ChannelType, Guild, GuildBasedChannel, NewsChannel, PrivateThreadChannel, PublicThreadChannel, TextChannel } from "discord.js";
+import { ChannelType, Guild, GuildBasedChannel, NewsChannel, PrivateThreadChannel, PublicThreadChannel, StageChannel, TextChannel, VoiceChannel } from "discord.js";
 
 import { BooleanOptionRepresentation, EmojisListOptionRepresentation, EnumOptionRepresentation, FloatOptionRepresentation, IntOptionRepresentation, RoleOptionRepresentation, RolesListOptionRepresentation, TextChannelOptionRepresentation, TextChannelsListOptionRepresentation, TextOptionRepresentation, VoiceChannelOptionRepresentation } from "./guild-config-types";
 
@@ -95,6 +95,13 @@ function isTextChannel(channel: GuildBasedChannel): channel is PublicThreadChann
     ].includes(channel.type);
 }
 
+function isVoiceChannel(channel: GuildBasedChannel): channel is VoiceChannel | StageChannel {
+    return [
+        ChannelType.GuildVoice,
+        ChannelType.GuildStageVoice,
+    ].includes(channel.type);
+}
+
 export function assertTextChannelValidity(optionName: string, option: TextChannelOptionRepresentation, value: unknown, guild: Guild) {
     if (typeof value !== "string") {
         throw new Error(`Option ${optionName} should be a string`);
@@ -128,8 +135,8 @@ export function assertTextChannelListValidity(optionName: string, option: TextCh
     }
     for (const channelId of value) {
         const channel = guild.channels.cache.get(channelId);
-        if (channel === undefined || !isTextChannel(channel)) {
-            throw new Error(`Option ${optionName} should be a valid text channel ID (${channelId})`);
+        if (channel === undefined || !(isTextChannel(channel) || isVoiceChannel(channel))) {
+            throw new Error(`Option ${optionName} should be a valid list of text channel IDs (${channelId})`);
         }
         if (!option.allow_threads && channel.isThread()) {
             throw new Error(`Option ${optionName} should not contain a thread channel (${channelId})`);
