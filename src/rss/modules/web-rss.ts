@@ -76,7 +76,6 @@ export default class WebRss {
     }
 
     private extractFirstImageFromContent(content: string): string | null {
-        console.debug(content);
         const exp = new RegExp(
             [
                 "(http(s?):)",

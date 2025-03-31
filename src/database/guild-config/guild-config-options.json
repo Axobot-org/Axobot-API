@@ -460,6 +460,26 @@
                 }
             ]
         },
+        "voice_xp_per_min": {
+            "type": "int",
+            "min": 0,
+            "max": 100,
+            "default": 0,
+            "is_listed": true,
+            "requires": [
+                {
+                    "option": "enable_xp",
+                    "to_be": true
+                },
+                {
+                    "option": "xp_type",
+                    "to_be": [
+                        "mee6-like",
+                        "local"
+                    ]
+                }
+            ]
+        },
         "xp_decay": {
             "type": "int",
             "min": 0,
