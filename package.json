@@ -1,6 +1,6 @@
 {
   "name": "axobot-api",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "A TypeScript API for the Axobot Discord bot",
   "main": "index.js",
   "scripts": {

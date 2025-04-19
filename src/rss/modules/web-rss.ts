@@ -24,7 +24,7 @@ export default class WebRss {
     }
 
     /**
-     * Parse a RSS feed from a given URL
+     * Parse an RSS feed from a given URL
      * @returns The parsed feed
      */
     private async getFeed(url: string): Promise<Parser.Output<unknown> | null> {
@@ -32,7 +32,7 @@ export default class WebRss {
         try {
             feed = await this.parser.parseURL(url);
         } catch (err) {
-            const sanitizedUrl = url.replace(/\n|\r/g, "").slice(0, 100);
+            const sanitizedUrl = url.replace(/[\n\r]/g, "").slice(0, 100);
             console.warn(`Error while fetching RSS feed from ${sanitizedUrl}: ${err}`);
             return null;
         }
@@ -48,7 +48,7 @@ export default class WebRss {
      * Remove pinned posts from a feed entries
      */
     private async filterPinnedPosts(entries: Parser.Item[]) {
-        while (entries.length > 0 && (!entries[0].isoDate || !entries[1].isoDate || entries[0].isoDate < entries[1].isoDate)) {
+        while (entries.length >= 2 && (!entries[0].isoDate || !entries[1].isoDate || entries[0].isoDate < entries[1].isoDate)) {
             entries.shift();
         }
         return entries;

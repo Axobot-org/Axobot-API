@@ -133,6 +133,7 @@ dist
 # Build folder
 build/
 
-# vscode/mac folders
+# IDE/mac folders
 .vscode
+.idea
 .DS_Store
