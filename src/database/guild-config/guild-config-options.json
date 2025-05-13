@@ -40,6 +40,13 @@
             "default": 10,
             "is_listed": false
         },
+        "quickrss_max_number": {
+            "type": "int",
+            "min": 0,
+            "max": null,
+            "default": 3,
+            "is_listed": false
+        },
         "streamers_max_number": {
             "type": "int",
             "min": 0,
