@@ -14,6 +14,17 @@ export default class WebRss {
         })),
     });
 
+    private imageUrlRegex = new RegExp(
+        [
+            "(http(s?):)",
+            "([/|.\\w\\s-])*",
+            "\\.(?:jpe?g|gif|png|webp)",
+        ].join(""),
+        "i"
+    );
+
+    private imageAltRegex = new RegExp(/<img\b[^>]*?(?:title="([^"]+)"|alt="([^"]+)")[^>]*?>/, "i");
+
     async getLastPost(url: string): Promise<ParsedEntry | undefined> {
         const feed = await this.getFeed(url);
         if (!feed) {
@@ -63,6 +74,7 @@ export default class WebRss {
             author: entry.creator || entry.author || feed.title || null,
             channel: feed.title || null,
             image: entry.mediaThumbnail?.url || this.extractImageFromEnclosure(entry) || this.extractFirstImageFromContent(entry.content || "") || null,
+            imageAlt: this.extractFirstImageAltFromContent(entry.content || "") || null,
             postText: entry.contentSnippet || null,
             postDescription: entry.summary || null,
         };
@@ -76,14 +88,11 @@ export default class WebRss {
     }
 
     private extractFirstImageFromContent(content: string): string | null {
-        const exp = new RegExp(
-            [
-                "(http(s?):)",
-                "([/|.\\w\\s-])*",
-                "\\.(?:jpe?g|gif|png|webp)",
-            ].join(""),
-            "i"
-        );
-        return content.match(exp)?.[0] || null;
+        return content.match(this.imageUrlRegex)?.[0] || null;
+    }
+
+    private extractFirstImageAltFromContent(content: string): string | null {
+        const match = content.match(this.imageAltRegex);
+        return match?.[1] || match?.[2] || null;
     }
 }

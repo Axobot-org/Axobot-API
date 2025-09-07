@@ -1,6 +1,6 @@
 {
   "name": "axobot-api",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "A TypeScript API for the Axobot Discord bot",
   "main": "index.js",
   "scripts": {
@@ -38,17 +38,17 @@
   },
   "dependencies": {
     "cache-manager": "^5.4.0",
-    "compression": "^1.7.4",
+    "compression": "^1.8.1",
     "console-stamp": "^3.1.1",
     "cors": "^2.8.5",
-    "discord.js": "^14.18.0",
+    "discord.js": "^14.21.0",
     "dotenv": "^16.3.1",
     "express": "^5.0.1",
     "express-rate-limit": "^7.4.0",
     "json-bigint": "^1.0.0",
     "jsonwebtoken": "^9.0.1",
     "mariadb": "^3.2.0",
-    "morgan": "^1.10.0",
+    "morgan": "^1.10.1",
     "rss-parser": "github:ZRunner/rss-parser",
     "typescript-eslint": "^7.1.1",
     "typia": "^7.0.0"

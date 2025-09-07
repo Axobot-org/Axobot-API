@@ -6,6 +6,7 @@ export interface ParsedEntry {
     author: string | null;
     channel: string | null;
     image: string | null;
+    imageAlt: string | null;
     postText: string | null;
     postDescription: string | null;
 }

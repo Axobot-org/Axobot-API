@@ -1,7 +1,7 @@
 import { ChannelType, GuildBasedChannel } from "discord.js";
 import { NextFunction, Request, Response } from "express";
 import { SqlError } from "mariadb";
-import { is } from "typia";
+import { equals, is } from "typia";
 
 import DiscordClient from "../../bot/client";
 import Database from "../../database/db";
@@ -664,7 +664,7 @@ export async function editRssFeed(req: Request, res: Response) {
     }
     // check data validity
     const data = req.body;
-    if (!is<RssFeedPUTData>(data)) {
+    if (!is<RssFeedPUTData>(data) || !equals<RssFeedPUTData["embed"]>(data.embed)) {
         res._err = "Invalid data";
         res.status(400).send(res._err);
         return;
