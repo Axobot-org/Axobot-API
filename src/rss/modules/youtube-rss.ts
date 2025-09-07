@@ -141,6 +141,7 @@ export default class YouTubeRss {
             author: entry.author!,
             channel: entry.author!,
             image: entry.mediaThumbnail?.url || null,
+            imageAlt: null,
             postText: entry.contentSnippet || null,
             postDescription: null,
         };

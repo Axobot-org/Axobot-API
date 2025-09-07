@@ -25,13 +25,13 @@ export interface RssFeedForCreation {
     roles: string[];
     useEmbed: boolean;
     embed: {
-        authorText?: string;
+        author_text?: string;
         title?: string;
-        footerText?: string;
+        footer_text?: string;
         color?: number;
-        showDateInFooter?: boolean;
-        enableLinkInTitle?: boolean;
-        imageLocation?: "thumbnail" | "banner" | "none";
+        show_date_in_footer?: boolean;
+        enable_link_in_title?: boolean;
+        image_location?: "thumbnail" | "banner" | "none";
     };
     silentMention: boolean;
     enabled: boolean;
@@ -44,13 +44,13 @@ export interface RssFeedForEdition {
     roles: string[];
     useEmbed: boolean;
     embed: {
-        authorText?: string;
+        author_text?: string;
         title?: string;
-        footerText?: string;
+        footer_text?: string;
         color?: number;
-        showDateInFooter?: boolean;
-        enableLinkInTitle?: boolean;
-        imageLocation?: "thumbnail" | "banner" | "none";
+        show_date_in_footer?: boolean;
+        enable_link_in_title?: boolean;
+        image_location?: "thumbnail" | "banner" | "none";
     };
     silentMention: boolean;
     enabled: boolean;
@@ -66,13 +66,13 @@ export interface DBRssFeed {
     roles: bigint[];
     useEmbed: boolean;
     embed: {
-        authorText?: string;
+        author_text?: string;
         title?: string;
-        footerText?: string;
+        footer_text?: string;
         color?: number;
-        showDateInFooter?: boolean;
-        enableLinkInTitle?: boolean;
-        imageLocation?: "thumbnail" | "banner" | "none";
+        show_date_in_footer?: boolean;
+        enable_link_in_title?: boolean;
+        image_location?: "thumbnail" | "banner" | "none";
     };
     silentMention: boolean;
     recentErrors: number;
