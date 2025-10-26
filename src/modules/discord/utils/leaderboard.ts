@@ -38,12 +38,13 @@ export async function getGuildInfo(guild: Guild): Promise<LeaderboardGuildData> 
 }
 
 export async function checkUserAuthentificationAndPermission(req: Request, res: Response): Promise<boolean> {
-    const tokenCheckError = await tokenCheck(req);
-    if (Array.isArray(tokenCheckError)) {
-        res._err = tokenCheckError[1];
-        res.status(tokenCheckError[0]).send(res._err);
+    const tokenCheckResult = await tokenCheck(req);
+    if (Array.isArray(tokenCheckResult)) { // is an error code and message
+        res._err = tokenCheckResult[1];
+        res.status(tokenCheckResult[0]).send(res._err);
         return false;
     }
+    res.locals.user = tokenCheckResult;
     if (res.locals.user === undefined) {
         res._err = "Invalid token";
         res.status(401).send(res._err);
