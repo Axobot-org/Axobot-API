@@ -10,7 +10,7 @@ export interface DockerPushEvent {
         date_created: number;
         description: string;
         dockerfile: string;
-        full_description: string;
+        full_description: string | null;
         is_official: boolean;
         is_private: boolean;
         is_trusted: boolean;
