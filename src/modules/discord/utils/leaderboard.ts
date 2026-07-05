@@ -1,5 +1,6 @@
 import { Guild } from "discord.js";
 import { Request, Response } from "express";
+import { ParamsFlatDictionary } from "express-serve-static-core";
 
 import DiscordClient from "../../../bot/client";
 import { tokenCheck } from "../../auth/tokens";
@@ -37,7 +38,7 @@ export async function getGuildInfo(guild: Guild): Promise<LeaderboardGuildData> 
     };
 }
 
-export async function checkUserAuthentificationAndPermission(req: Request, res: Response): Promise<boolean> {
+export async function checkUserAuthentificationAndPermission(req: Request<ParamsFlatDictionary>, res: Response): Promise<boolean> {
     const tokenCheckResult = await tokenCheck(req);
     if (Array.isArray(tokenCheckResult)) { // is an error code and message
         res._err = tokenCheckResult[1];
