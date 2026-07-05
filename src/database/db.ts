@@ -1,4 +1,4 @@
-import { createPool, Pool, PoolConfig, Types } from "mariadb";
+import { createPool, Pool, PoolConfig } from "mariadb";
 
 import { TokenInformation } from "./models/auth";
 import { EditionLogType } from "./models/misc-db-types";
@@ -21,7 +21,8 @@ const DB_CONFIG: PoolConfig = {
     typeCast: function castField(field, useDefaultTypeCasting) {
         // We only want to cast bit fields that have a single-bit in them. If the field
         // has more than one bit, then we cannot assume it is supposed to be a Boolean.
-        if ( ( field.type === Types.BIT ) && ( field.columnLength === 1 ) ) {
+        // FIXME: should use Types.BIT here but mariadb broke its export (https://github.com/mariadb-corporation/mariadb-connector-nodejs/issues/347)
+        if ( ( field.type === "BIT" ) && ( field.columnLength === 1 ) ) {
             const bytes = field.buffer();
             // A Buffer in Node represents a collection of 8-bit unsigned integers.
             // Therefore, our single "bit field" comes back as the bits '0000 0001',
