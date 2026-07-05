@@ -1,5 +1,6 @@
 import { ChannelType, GuildBasedChannel } from "discord.js";
 import { NextFunction, Request, Response } from "express";
+import { ParamsFlatDictionary } from "express-serve-static-core";
 import { SqlError } from "mariadb";
 import { equals, is } from "typia";
 
@@ -40,7 +41,7 @@ export async function getDefaultGuildConfigOptions(req: Request, res: Response) 
     res.send(optionsList);
 }
 
-export async function getGuildConfig(req: Request, res: Response) {
+export async function getGuildConfig(req: Request<ParamsFlatDictionary>, res: Response) {
     const categoriesQuery = parseCategoriesParameter(req.query.categories);
     if (categoriesQuery === null) {
         res.status(400).send("Invalid category");
@@ -63,7 +64,7 @@ export async function getGuildConfig(req: Request, res: Response) {
     res.send(config);
 }
 
-export async function getGuildConfigEditionLogs(req: Request, res: Response) {
+export async function getGuildConfigEditionLogs(req: Request<ParamsFlatDictionary>, res: Response) {
     const page = parseInt(req.query.page as string) || 0;
     const limit = parseInt(req.query.limit as string) || 100;
     if (page < 0 || limit < 0 || limit > 500) {
@@ -92,7 +93,7 @@ export async function getGuildConfigEditionLogs(req: Request, res: Response) {
     res.json(editionLogs);
 }
 
-export async function getGuildRoleRewards(req: Request, res: Response) {
+export async function getGuildRoleRewards(req: Request<ParamsFlatDictionary>, res: Response) {
     let guildId;
     try {
         guildId = BigInt(req.params.guildId);
@@ -131,7 +132,7 @@ export async function getGlobalLeaderboard(req: Request, res: Response, next: Ne
     });
 }
 
-export async function getGuildLeaderboard(req: Request, res: Response, next: NextFunction) {
+export async function getGuildLeaderboard(req: Request<ParamsFlatDictionary>, res: Response, next: NextFunction) {
     const page = parseInt(req.query.page as string) || 0;
     const limit = parseInt(req.query.limit as string) || 50;
     let guildId;
@@ -194,7 +195,7 @@ export async function getGuildLeaderboard(req: Request, res: Response, next: Nex
     });
 }
 
-export async function getGuildLeaderboardAsJson(req: Request, res: Response, next: NextFunction) {
+export async function getGuildLeaderboardAsJson(req: Request<ParamsFlatDictionary>, res: Response, next: NextFunction) {
     let guildId;
     try {
         guildId = BigInt(req.params.guildId);
@@ -291,7 +292,7 @@ export async function getUserGuilds(req: Request, res: Response) {
     res.send(userGuilds);
 }
 
-export async function getBasicGuildInfo(req: Request, res: Response) {
+export async function getBasicGuildInfo(req: Request<ParamsFlatDictionary>, res: Response) {
     let guildId;
     try {
         guildId = BigInt(req.params.guildId);
@@ -309,7 +310,7 @@ export async function getBasicGuildInfo(req: Request, res: Response) {
     res.json(await discordClient.getBasicGuildInfo({ baseGuild: guild, userId: res.locals.user!.user_id.toString() }));
 }
 
-export async function getGuildRoles(req: Request, res: Response) {
+export async function getGuildRoles(req: Request<ParamsFlatDictionary>, res: Response) {
     let guildId;
     try {
         guildId = BigInt(req.params.guildId);
@@ -338,7 +339,7 @@ export async function getGuildRoles(req: Request, res: Response) {
     res.json(roles);
 }
 
-export async function getGuildChannels(req: Request, res: Response) {
+export async function getGuildChannels(req: Request<ParamsFlatDictionary>, res: Response) {
     let guildId;
     try {
         guildId = BigInt(req.params.guildId);
@@ -398,7 +399,7 @@ export async function getGuildChannels(req: Request, res: Response) {
 }
 
 
-export async function putGuildLeaderboard(req: Request, res: Response, next: NextFunction) {
+export async function putGuildLeaderboard(req: Request<ParamsFlatDictionary>, res: Response, next: NextFunction) {
     // check guild ID validity
     let guildId;
     try {
@@ -459,7 +460,7 @@ export async function putGuildLeaderboard(req: Request, res: Response, next: Nex
     res.sendStatus(204);
 }
 
-export async function putRoleRewards(req: Request, res: Response) {
+export async function putRoleRewards(req: Request<ParamsFlatDictionary>, res: Response) {
     // check user and guild ID validity
     if (res.locals.user === undefined) {
         res.status(401).send("Invalid token");
@@ -516,7 +517,7 @@ export async function putRoleRewards(req: Request, res: Response) {
     res.send(newRewards);
 }
 
-export async function editGuildConfig(req: Request, res: Response) {
+export async function editGuildConfig(req: Request<ParamsFlatDictionary>, res: Response) {
     // check user and guild ID validity
     if (res.locals.user === undefined) {
         res.status(401).send("Invalid token");
@@ -572,7 +573,7 @@ export async function editGuildConfig(req: Request, res: Response) {
     res.send(updatedConfig);
 }
 
-export async function getGuildRssFeeds(req: Request, res: Response) {
+export async function getGuildRssFeeds(req: Request<ParamsFlatDictionary>, res: Response) {
     let guildId;
     try {
         guildId = BigInt(req.params.guildId);
@@ -602,7 +603,7 @@ async function registerRssFeedsEdition(guildId: bigint, userId: bigint, eventTyp
     await db.addConfigEditionLog(guildId, userId, eventType, { feed: feedIdsAndName });
 }
 
-export async function toggleRssFeed(req: Request, res: Response) {
+export async function toggleRssFeed(req: Request<ParamsFlatDictionary>, res: Response) {
     let guildId, feedId;
     // check guild ID validity
     try {
@@ -646,7 +647,7 @@ export async function toggleRssFeed(req: Request, res: Response) {
     res.json(updatedFeedWithDisplayName);
 }
 
-export async function editRssFeed(req: Request, res: Response) {
+export async function editRssFeed(req: Request<ParamsFlatDictionary>, res: Response) {
     let guildId, feedId;
     // check guild ID validity
     try {
@@ -700,7 +701,7 @@ export async function editRssFeed(req: Request, res: Response) {
     res.json(updatedFeed);
 }
 
-export async function deleteRssFeed(req: Request, res: Response) {
+export async function deleteRssFeed(req: Request<ParamsFlatDictionary>, res: Response) {
     let guildId, feedId;
     // check guild ID validity
     try {
