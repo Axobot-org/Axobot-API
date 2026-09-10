@@ -48,7 +48,7 @@
     "json-bigint": "^1.0.0",
     "jsonwebtoken": "^9.0.1",
     "mariadb": "^3.2.0",
-    "morgan": "^1.10.1",
+    "morgan": "^1.12.0",
     "rss-parser": "github:ZRunner/rss-parser",
     "typescript-eslint": "^7.1.1",
     "typia": "^7.0.0"
