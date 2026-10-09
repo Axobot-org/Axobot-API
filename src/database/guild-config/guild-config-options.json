@@ -442,6 +442,17 @@
         }
       ]
     },
+    "rr_highest_only": {
+      "type": "boolean",
+      "default": false,
+      "is_listed": true,
+      "requires": [
+        {
+          "option": "enable_xp",
+          "to_be": true
+        }
+      ]
+    },
     "voice_xp_per_min": {
       "type": "int",
       "min": 0,
