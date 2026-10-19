@@ -5,6 +5,8 @@ import { DiscordMessage } from "../../utils/discord_message";
 import { MinimalDockerPushEvent } from "./types";
 
 const EMBED_COLOR = 0x0c49c2;
+const DOCKER_HUB_ORIGIN = "https://registry.hub.docker.com";
+const DOCKER_HOOK_PATH_REGEX = /^\/u\/[^/]+\/[^/]+\/hook\/[^/]+\/?$/;
 
 function sendToDiscord(webhookPath: string, data: DiscordMessage) {
   return fetch(`https://discord.com/api/webhooks/${webhookPath}`, {
@@ -16,12 +18,43 @@ function sendToDiscord(webhookPath: string, data: DiscordMessage) {
   });
 }
 
-function callbackDockerhub(callbackUrl: string) {
-  if (!callbackUrl.startsWith("https://registry.hub.docker.com/")) {
-    return Promise.reject(new Error("Invalid callback domain"));
+function parseDockerHubUrl(input: string): URL {
+  if (input.length > 2000 || input !== input.trim()) {
+    throw new Error("Invalid callback URL");
   }
-  return fetch(callbackUrl, {
+
+  let url: URL;
+  try {
+    url = new URL(input);
+  } catch {
+    throw new Error("Invalid callback URL");
+  }
+
+  if (
+    url.origin !== DOCKER_HUB_ORIGIN ||
+    url.username !== "" ||
+    url.password !== "" ||
+    url.search !== "" ||
+    url.hash !== ""
+  ) {
+    throw new Error("Invalid callback URL");
+  }
+
+  // Use allowlists for each path segment based on Docker Hub's actual callback format.
+  if (!DOCKER_HOOK_PATH_REGEX.test(url.pathname)) {
+    throw new Error("Invalid callback path");
+  }
+
+  return url;
+}
+
+async function callbackDockerhub(callbackUrl: string) {
+  const safeCallbackUrl = parseDockerHubUrl(callbackUrl);
+
+  const response = await fetch(safeCallbackUrl.toString(), {
     method: "POST",
+    redirect: "error",
+    signal: AbortSignal.timeout(5000),
     headers: {
       "Content-Type": "application/json",
     },
@@ -31,6 +64,10 @@ function callbackDockerhub(callbackUrl: string) {
       context: "Discord webhook forwarder",
     }),
   });
+
+  if (!response.ok) {
+    throw new Error(`Docker Hub callback failed with status ${response.status}`);
+  }
 }
 
 export async function postWebhookNotification(req: Request, res: Response) {
