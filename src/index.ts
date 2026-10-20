@@ -53,6 +53,14 @@ app.disable("x-powered-by");
 // compress all responses
 app.use(compression());
 
+// set-up global rate limit
+const globalLimiter = rateLimit({
+  windowMs: 10 * 1000, // 10 seconds
+  limit: 15, // Limit each IP to 15 requests per windowMs
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+});
+app.use(globalLimiter);
+
 // Allow BigInt in JSON responses
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unreachable code error
@@ -61,14 +69,6 @@ BigInt.prototype.toJSON = function () {
 };
 
 app.use(express.json({ limit: "10kb" }));
-
-// set-up global rate limit
-const globalLimiter = rateLimit({
-  windowMs: 10 * 1000, // 10 seconds
-  limit: 15, // Limit each IP to 15 requests per windowMs
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-});
-app.use(globalLimiter);
 
 // log every request to the console
 morgan.token("date", (req) => formatDate(req._startTime));
