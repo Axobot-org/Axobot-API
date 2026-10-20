@@ -100,6 +100,6 @@ app.use(function (error: Error, req: Request, res: Response, next: NextFunction)
   }
 });
 
-app.listen(port, () => {
+app.listen(port, "localhost", () => {
   console.info(`App V${process.env.npm_package_version} is running on http://localhost:${port} !`);
 });
