@@ -1,99 +1,99 @@
 export interface RawRssFeed {
-    ID: bigint;
-    channel: bigint;
-    type: string;
-    link: string;
-    date: string;
-    structure: string;
-    roles: string;
-    use_embed: boolean;
-    embed: string;
-    silent_mention: boolean;
-    recent_errors: number;
-    enabled: boolean;
-    added_at: string;
+  ID: bigint;
+  channel: bigint;
+  type: string;
+  link: string;
+  date: string;
+  structure: string;
+  roles: string;
+  use_embed: boolean;
+  embed: string;
+  silent_mention: boolean;
+  recent_errors: number;
+  enabled: boolean;
+  added_at: string;
 }
 
 export const VALID_RSS_FEED_TYPES = ["bluesky", "deviantart", "twitch", "web", "yt"] as const;
-export type VALID_RSS_FEED_TYPES = (typeof VALID_RSS_FEED_TYPES)[number];
+export type T_VALID_RSS_FEED_TYPES = (typeof VALID_RSS_FEED_TYPES)[number];
 
 export interface RssFeedForCreation {
-    channelId: string;
-    type: VALID_RSS_FEED_TYPES;
-    link: string;
-    structure: string;
-    roles: string[];
-    useEmbed: boolean;
-    embed: {
-        author_text?: string;
-        title?: string;
-        footer_text?: string;
-        color?: number;
-        show_date_in_footer?: boolean;
-        enable_link_in_title?: boolean;
-        image_location?: "thumbnail" | "banner" | "none";
-    };
-    silentMention: boolean;
-    enabled: boolean;
+  channelId: string;
+  type: T_VALID_RSS_FEED_TYPES;
+  link: string;
+  structure: string;
+  roles: string[];
+  useEmbed: boolean;
+  embed: {
+    author_text?: string;
+    title?: string;
+    footer_text?: string;
+    color?: number;
+    show_date_in_footer?: boolean;
+    enable_link_in_title?: boolean;
+    image_location?: "thumbnail" | "banner" | "none";
+  };
+  silentMention: boolean;
+  enabled: boolean;
 }
 
 export interface RssFeedForEdition {
-    id: string;
-    channelId: string;
-    structure: string;
-    roles: string[];
-    useEmbed: boolean;
-    embed: {
-        author_text?: string;
-        title?: string;
-        footer_text?: string;
-        color?: number;
-        show_date_in_footer?: boolean;
-        enable_link_in_title?: boolean;
-        image_location?: "thumbnail" | "banner" | "none";
-    };
-    silentMention: boolean;
-    enabled: boolean;
+  id: string;
+  channelId: string;
+  structure: string;
+  roles: string[];
+  useEmbed: boolean;
+  embed: {
+    author_text?: string;
+    title?: string;
+    footer_text?: string;
+    color?: number;
+    show_date_in_footer?: boolean;
+    enable_link_in_title?: boolean;
+    image_location?: "thumbnail" | "banner" | "none";
+  };
+  silentMention: boolean;
+  enabled: boolean;
 }
 
 export interface DBRssFeed {
-    id: bigint;
-    channelId: bigint;
-    type: string;
-    link: string;
-    date: Date;
-    structure: string;
-    roles: bigint[];
-    useEmbed: boolean;
-    embed: {
-        author_text?: string;
-        title?: string;
-        footer_text?: string;
-        color?: number;
-        show_date_in_footer?: boolean;
-        enable_link_in_title?: boolean;
-        image_location?: "thumbnail" | "banner" | "none";
-    };
-    silentMention: boolean;
-    recentErrors: number;
-    enabled: boolean;
-    addedAt: Date;
+  id: bigint;
+  channelId: bigint;
+  type: string;
+  link: string;
+  date: Date;
+  structure: string;
+  roles: bigint[];
+  useEmbed: boolean;
+  embed: {
+    author_text?: string;
+    title?: string;
+    footer_text?: string;
+    color?: number;
+    show_date_in_footer?: boolean;
+    enable_link_in_title?: boolean;
+    image_location?: "thumbnail" | "banner" | "none";
+  };
+  silentMention: boolean;
+  recentErrors: number;
+  enabled: boolean;
+  addedAt: Date;
 }
 
 export function rawToDBRssFeed(raw: RawRssFeed): DBRssFeed {
-    return {
-        id: raw.ID,
-        channelId: raw.channel,
-        type: raw.type,
-        link: raw.link,
-        date: new Date(raw.date),
-        structure: raw.structure,
-        roles: raw.roles ? raw.roles.split(";").map(BigInt) : [],
-        useEmbed: Boolean(raw.use_embed),
-        embed: JSON.parse(raw.embed),
-        silentMention: Boolean(raw.silent_mention),
-        recentErrors: raw.recent_errors,
-        enabled: Boolean(raw.enabled),
-        addedAt: new Date(raw.added_at),
-    };
+  return {
+    id: raw.ID,
+    channelId: raw.channel,
+    type: raw.type,
+    link: raw.link,
+    date: new Date(raw.date),
+    structure: raw.structure,
+    roles: raw.roles ? raw.roles.split(";").map(BigInt) : [],
+    useEmbed: Boolean(raw.use_embed),
+    embed: JSON.parse(raw.embed),
+    silentMention: Boolean(raw.silent_mention),
+    recentErrors: raw.recent_errors,
+    enabled: Boolean(raw.enabled),
+    addedAt: new Date(raw.added_at),
+  };
 }

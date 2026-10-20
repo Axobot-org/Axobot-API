@@ -1,26 +1,42 @@
 {
   "name": "axobot-api",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "description": "A TypeScript API for the Axobot Discord bot",
+  "homepage": "https://github.com/ZRunner/Axobot-API-V2#readme",
+  "bugs": {
+    "url": "https://github.com/ZRunner/Axobot-API-V2/issues"
+  },
+  "license": "GPL-3.0",
+  "author": "ZRunner",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZRunner/Axobot-API-V2.git"
+  },
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint . --ext .ts",
+    "lint": "oxlint",
+    "fmt": "oxfmt",
     "dev": "npx nodemon",
     "build": "tsc",
     "start": "npm run build && node build/index.js",
     "prepare": "ts-patch install && typia patch"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ZRunner/Axobot-API-V2.git"
+  "dependencies": {
+    "cache-manager": "^5.4.0",
+    "compression": "^1.8.1",
+    "console-stamp": "^3.1.1",
+    "cors": "^2.8.5",
+    "discord.js": "^14.27.0",
+    "dotenv": "^18.0.0",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
+    "json-bigint": "^1.0.0",
+    "jsonwebtoken": "^9.0.1",
+    "mariadb": "^3.2.0",
+    "morgan": "^1.12.0",
+    "rss-parser": "github:ZRunner/rss-parser",
+    "typia": "^7.0.0"
   },
-  "author": "ZRunner",
-  "license": "GPL-3.0",
-  "bugs": {
-    "url": "https://github.com/ZRunner/Axobot-API-V2/issues"
-  },
-  "homepage": "https://github.com/ZRunner/Axobot-API-V2#readme",
   "devDependencies": {
     "@types/compression": "^1.7.5",
     "@types/cors": "^2.8.13",
@@ -29,28 +45,12 @@
     "@types/jsonwebtoken": "^9.0.2",
     "@types/morgan": "^1.9.4",
     "@types/node": "^20.4.8",
-    "eslint": "^8.57.0",
-    "eslint-plugin-simple-import-sort": "^12.0.0",
     "nodemon": "^3.1.0",
+    "oxfmt": "^0.72.0",
+    "oxlint": "^1.87.0",
+    "oxlint-tsgolint": "^7.0.2003",
     "ts-node": "^10.9.2",
     "ts-patch": "^3.3.0",
     "typescript": "~5.7.3"
-  },
-  "dependencies": {
-    "cache-manager": "^5.4.0",
-    "compression": "^1.8.1",
-    "console-stamp": "^3.1.1",
-    "cors": "^2.8.5",
-    "discord.js": "^14.21.0",
-    "dotenv": "^16.3.1",
-    "express": "^5.2.1",
-    "express-rate-limit": "^7.4.0",
-    "json-bigint": "^1.0.0",
-    "jsonwebtoken": "^9.0.1",
-    "mariadb": "^3.2.0",
-    "morgan": "^1.10.1",
-    "rss-parser": "github:ZRunner/rss-parser",
-    "typescript-eslint": "^7.1.1",
-    "typia": "^7.0.0"
   }
 }

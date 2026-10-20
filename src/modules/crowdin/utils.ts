@@ -7,11 +7,10 @@ import { CrowdinProject, CrowdinUser } from "./types/commons";
  * @returns The embed footer object
  */
 export function footerFromUser(user: CrowdinUser) {
-    return {
-        text: `Pushed by ${user.username}`,
-        // eslint-disable-next-line camelcase
-        icon_url: user.avatarUrl,
-    };
+  return {
+    text: `Pushed by ${user.username}`,
+    icon_url: user.avatarUrl,
+  };
 }
 
 /**
@@ -20,10 +19,10 @@ export function footerFromUser(user: CrowdinUser) {
  * @returns The embed author object
  */
 export function authorFromProject(project: CrowdinProject) {
-    return {
-        name: project.name,
-        url: project.url,
-    };
+  return {
+    name: project.name,
+    url: project.url,
+  };
 }
 
 /**
@@ -33,14 +32,14 @@ export function authorFromProject(project: CrowdinProject) {
  * @returns The webhook response
  */
 export function sendToDiscord(webhookPath: string, data: DiscordMessage) {
-    if (!/^\d+\/\w+$/.test(webhookPath)) {
-        return Promise.reject(new Error("Invalid webhook path"));
-    }
-    return fetch(`https://discord.com/api/webhooks/${webhookPath}`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-    });
+  if (!/^\d+\/\w+$/.test(webhookPath)) {
+    return Promise.reject(new Error("Invalid webhook path"));
+  }
+  return fetch(`https://discord.com/api/webhooks/${webhookPath}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
 }
