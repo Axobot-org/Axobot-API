@@ -76,6 +76,10 @@ app.use(
   morgan("\x1b[94m[:date]\x1b[0m \x1b[93m:remote-addr\x1b[0m :method :status :url:err - :response-time ms"),
 );
 
+app.get("/robots.txt", (req, res) => {
+  res.type("text/plain").send("User-agent: *\nDisallow: /\n");
+});
+
 app.get("/", (req, res) => {
   res.send({ success: true, version: process.env.npm_package_version });
 });
