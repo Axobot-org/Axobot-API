@@ -1,7 +1,8 @@
-import bodyParser from "body-parser";
 import ConsoleStamp from "console-stamp";
 import dotenv from "dotenv";
 dotenv.config();
+import { STATUS_CODES } from "http";
+
 import compression from "compression";
 import cors from "cors";
 import express, { NextFunction, Request, Response } from "express";
@@ -59,12 +60,12 @@ BigInt.prototype.toJSON = function () {
   return this.toString();
 };
 
-app.use(bodyParser.json());
+app.use(express.json({ limit: "10kb" }));
 
 // set-up global rate limit
 const globalLimiter = rateLimit({
   windowMs: 10 * 1000, // 10 seconds
-  max: 15, // Limit each IP to 15 requests per windowMs
+  limit: 15, // Limit each IP to 15 requests per windowMs
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
 });
 app.use(globalLimiter);
@@ -81,7 +82,8 @@ app.get("/robots.txt", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send({ success: true, version: process.env.npm_package_version });
+  console.info(`Received request for root endpoint; app version is ${process.env.npm_package_version}`);
+  res.send({ success: true });
 });
 
 app.use("/auth", AuthRouter);
@@ -90,15 +92,25 @@ app.use("/discord", DiscordRouter);
 app.use("/docker", DockerRouter);
 app.use("/rss", RssRouter);
 
-// Middleware to return a clean error message when the body is not a valid JSON
-app.use(function (error: Error, req: Request, res: Response, next: NextFunction) {
-  if (error instanceof SyntaxError) {
-    res.status(400).send("Invalid JSON body");
-  } else {
-    console.error(error.stack);
-    res.status(500).send("Internal server error");
-  }
+app.use((req, res) => {
+  res.status(404).json({ error: "Not found" });
 });
+
+// Error handler (must stay last)
+app.use(
+  (error: Error & { status?: number; type?: string }, req: Request, res: Response, next: NextFunction) => {
+    // Malformed JSON: keep the existing behaviour
+    if (error.type === "entity.parse.failed") {
+      res.status(400).send("Invalid JSON body");
+      return;
+    }
+
+    // Other client errors (413, 415...): status line only, no details
+    const status = error.status && error.status < 500 ? error.status : 500;
+    if (status === 500) console.error(error.stack);
+    res.status(status).send(status === 500 ? "Internal server error" : STATUS_CODES[status]);
+  },
+);
 
 app.listen(port, "localhost", () => {
   console.info(`App V${process.env.npm_package_version} is running on http://localhost:${port} !`);
